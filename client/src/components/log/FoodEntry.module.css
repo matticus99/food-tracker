@@ -1,4 +1,29 @@
+.wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+.deleteZone {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 120px;
+  background: var(--accent-rose);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
 .entry {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -7,6 +32,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   transition: background var(--transition-fast);
+  z-index: 1;
 }
 
 .entry:hover {
@@ -80,4 +106,10 @@
 
 .deleteBtn:hover {
   color: var(--accent-rose);
+}
+
+@media (pointer: coarse) {
+  .deleteBtn {
+    display: none;
+  }
 }

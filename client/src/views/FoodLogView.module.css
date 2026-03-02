@@ -5,6 +5,13 @@
   padding-bottom: var(--space-3xl);
 }
 
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding-top: var(--space-md);
+}
+
 .fab {
   position: fixed;
   bottom: calc(var(--space-lg) + var(--bottomnav-height));

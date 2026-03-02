@@ -12,11 +12,21 @@ export default function AnalyticsView() {
     <div className={viewStyles.view}>
       <PageHeader title="Analytics" />
       <div className={styles.grid}>
-        <TdeeCard />
-        <WeightTrendCard />
-        <AvgIntakeCard />
-        <ActualVsGoalCard />
-        <TdeeBreakdownCard />
+        <div className={viewStyles.staggerIn}>
+          <TdeeCard />
+        </div>
+        <div className={viewStyles.staggerIn} style={{ animationDelay: '60ms' }}>
+          <WeightTrendCard />
+        </div>
+        <div className={viewStyles.staggerIn} style={{ animationDelay: '120ms' }}>
+          <AvgIntakeCard />
+        </div>
+        <div className={viewStyles.staggerIn} style={{ animationDelay: '180ms' }}>
+          <ActualVsGoalCard />
+        </div>
+        <div className={viewStyles.staggerIn} style={{ animationDelay: '240ms' }}>
+          <TdeeBreakdownCard />
+        </div>
       </div>
     </div>
   );

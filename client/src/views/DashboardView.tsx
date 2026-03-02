@@ -6,6 +6,9 @@ import CalorieRing from '../components/dashboard/CalorieRing';
 import MacroCard from '../components/dashboard/MacroCard';
 import TdeeIntakeChart from '../components/dashboard/TdeeIntakeChart';
 import WeightModal from '../components/dashboard/WeightModal';
+import { SkeletonRing, SkeletonCard, Skeleton } from '../components/ui/Skeleton';
+import EmptyState from '../components/ui/EmptyState';
+import { useToast } from '../components/ui/Toast';
 import { useDate } from '../context/DateContext';
 import { useApi } from '../hooks/useApi';
 import styles from './DashboardView.module.css';
@@ -52,6 +55,7 @@ interface IntakePoint {
 export default function DashboardView() {
   const { date, dateStr } = useDate();
   const [weightModalOpen, setWeightModalOpen] = useState(false);
+  const { toast } = useToast();
 
   const dateLabel = date.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -59,9 +63,9 @@ export default function DashboardView() {
     day: 'numeric',
   });
 
-  const { data: logEntries } = useApi<LogEntry[]>(`/log?date=${dateStr}`);
+  const { data: logEntries, loading: logLoading } = useApi<LogEntry[]>(`/log?date=${dateStr}`);
   const { data: user, refetch: refetchUser } = useApi<User>('/user');
-  const { data: tdeeData, refetch: refetchTdee } = useApi<TdeePoint[]>('/analytics/tdee?days=7');
+  const { data: tdeeData, loading: tdeeLoading, refetch: refetchTdee } = useApi<TdeePoint[]>('/analytics/tdee?days=7');
   const { data: intakeData } = useApi<IntakePoint[]>('/analytics/daily-intake?days=7');
   const { data: todayWeight, refetch: refetchWeight } = useApi<WeightEntry[]>(`/weight?from=${dateStr}&to=${dateStr}`);
 
@@ -69,7 +73,8 @@ export default function DashboardView() {
     refetchWeight();
     refetchTdee();
     refetchUser();
-  }, [refetchWeight, refetchTdee, refetchUser]);
+    toast('Weight logged', 'success');
+  }, [refetchWeight, refetchTdee, refetchUser, toast]);
 
   const totals = useMemo(() => {
     if (!logEntries) return { calories: 0, protein: 0, fat: 0, carbs: 0 };
@@ -114,6 +119,8 @@ export default function DashboardView() {
     return new Set(intakeData.map((d) => d.date));
   }, [intakeData]);
 
+  const isLoading = logLoading && !logEntries;
+
   return (
     <div className={viewStyles.view}>
       <PageHeader title="Dashboard" date={dateLabel} />
@@ -121,43 +128,78 @@ export default function DashboardView() {
         <DayNavigator />
         <WeekStrip datesWithData={datesWithData} />
 
-        <div className={styles.ringSection}>
-          <CalorieRing consumed={totals.calories} target={user?.calorieTarget ?? 2200} />
-          <div className={styles.calorieStats}>
-            <div className={styles.calStat}>
-              <span className={styles.calVal}>{Math.round(totals.calories)}</span>
-              <span className={styles.calLabel}>consumed</span>
+        {isLoading ? (
+          <>
+            <div className={styles.ringSection}>
+              <SkeletonRing />
+              <div className={styles.calorieStats}>
+                <Skeleton width="60px" height="20px" />
+                <Skeleton width="60px" height="20px" />
+              </div>
             </div>
-            <div className={styles.calStat}>
-              <span className={styles.calVal}>{user?.calorieTarget ?? 2200}</span>
-              <span className={styles.calLabel}>target</span>
+            <SkeletonCard lines={3} />
+            <Skeleton width="140px" height="40px" radius="var(--radius-md)" />
+            <SkeletonCard lines={2} />
+          </>
+        ) : (
+          <>
+            <div className={`${styles.ringSection} ${viewStyles.staggerIn}`}>
+              <CalorieRing consumed={totals.calories} target={user?.calorieTarget ?? 2200} />
+              <div className={styles.calorieStats}>
+                <div className={styles.calStat}>
+                  <span className={styles.calVal}>{Math.round(totals.calories)}</span>
+                  <span className={styles.calLabel}>consumed</span>
+                </div>
+                <div className={styles.calStat}>
+                  <span className={styles.calVal}>{user?.calorieTarget ?? 2200}</span>
+                  <span className={styles.calLabel}>target</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <MacroCard
-          protein={totals.protein}
-          proteinTarget={user?.proteinTarget ?? 180}
-          fat={totals.fat}
-          fatTarget={user?.fatTarget ?? 70}
-          carbs={totals.carbs}
-          carbsTarget={user?.carbTarget ?? 240}
-        />
+            <div className={viewStyles.staggerIn} style={{ animationDelay: '60ms' }}>
+              <MacroCard
+                protein={totals.protein}
+                proteinTarget={user?.proteinTarget ?? 180}
+                fat={totals.fat}
+                fatTarget={user?.fatTarget ?? 70}
+                carbs={totals.carbs}
+                carbsTarget={user?.carbTarget ?? 240}
+              />
+            </div>
 
-        <button className={styles.weightBtn} onClick={() => setWeightModalOpen(true)}>
-          <span className={styles.weightIcon}>⚖️</span>
-          <span className={styles.weightText}>
-            {todayWeight && todayWeight.length > 0
-              ? `${Number(todayWeight[0]!.weight).toFixed(1)} lbs`
-              : 'Log Weight'}
-          </span>
-        </button>
+            <button
+              className={`${styles.weightBtn} ${viewStyles.staggerIn}`}
+              style={{ animationDelay: '120ms' }}
+              onClick={() => setWeightModalOpen(true)}
+            >
+              <span className={styles.weightIcon}>⚖️</span>
+              <span className={styles.weightText}>
+                {todayWeight && todayWeight.length > 0
+                  ? `${Number(todayWeight[0]!.weight).toFixed(1)} lbs`
+                  : 'Log Weight'}
+              </span>
+            </button>
 
-        <TdeeIntakeChart
-          data={chartData.points}
-          avgTdee={chartData.avgTdee}
-          avgIntake={chartData.avgIntake}
-        />
+            {tdeeLoading && !tdeeData ? (
+              <SkeletonCard lines={2} />
+            ) : chartData.points.length > 0 ? (
+              <div className={viewStyles.staggerIn} style={{ animationDelay: '180ms' }}>
+                <TdeeIntakeChart
+                  data={chartData.points}
+                  avgTdee={chartData.avgTdee}
+                  avgIntake={chartData.avgIntake}
+                />
+              </div>
+            ) : (
+              <EmptyState
+                icon="📊"
+                title="No trend data yet"
+                description="Log a few days of food and weight to see your TDEE trend"
+              />
+            )}
+          </>
+        )}
       </div>
       <WeightModal
         open={weightModalOpen}

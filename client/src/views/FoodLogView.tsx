@@ -4,6 +4,9 @@ import DayNavigator from '../components/dashboard/DayNavigator';
 import LogSummary from '../components/log/LogSummary';
 import Timeline from '../components/log/Timeline';
 import AddFoodModal from '../components/log/AddFoodModal';
+import { Skeleton } from '../components/ui/Skeleton';
+import EmptyState from '../components/ui/EmptyState';
+import { useToast } from '../components/ui/Toast';
 import { useDate } from '../context/DateContext';
 import { useApi, apiFetch } from '../hooks/useApi';
 import styles from './FoodLogView.module.css';
@@ -26,9 +29,10 @@ interface LogEntry {
 
 export default function FoodLogView() {
   const { date, dateStr } = useDate();
-  const { data: entries, refetch } = useApi<LogEntry[]>(`/log?date=${dateStr}`);
+  const { data: entries, loading, refetch } = useApi<LogEntry[]>(`/log?date=${dateStr}`);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalHour, setModalHour] = useState(12);
+  const { toast } = useToast();
 
   const dateLabel = date.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -53,16 +57,29 @@ export default function FoodLogView() {
 
   const handleDelete = useCallback(
     async (id: string) => {
-      await apiFetch(`/log/${id}`, { method: 'DELETE' });
-      refetch();
+      try {
+        await apiFetch(`/log/${id}`, { method: 'DELETE' });
+        refetch();
+        toast('Entry removed', 'success');
+      } catch {
+        toast('Failed to delete entry', 'error');
+      }
     },
-    [refetch],
+    [refetch, toast],
   );
 
   const openAddModal = useCallback((hour: number) => {
     setModalHour(hour);
     setModalOpen(true);
   }, []);
+
+  const handleAdded = useCallback(() => {
+    refetch();
+    toast('Food added', 'success');
+  }, [refetch, toast]);
+
+  const isLoading = loading && !entries;
+  const isEmpty = entries && entries.length === 0;
 
   return (
     <div className={viewStyles.view}>
@@ -75,11 +92,31 @@ export default function FoodLogView() {
           fat={totals.fat}
           carbs={totals.carbs}
         />
-        <Timeline
-          entries={entries ?? []}
-          onDelete={handleDelete}
-          onAddAtHour={openAddModal}
-        />
+
+        {isLoading ? (
+          <div className={styles.skeletonList}>
+            <Skeleton width="100%" height="52px" radius="var(--radius-md)" />
+            <Skeleton width="100%" height="52px" radius="var(--radius-md)" />
+            <Skeleton width="100%" height="52px" radius="var(--radius-md)" />
+          </div>
+        ) : isEmpty ? (
+          <EmptyState
+            icon="🍽️"
+            title="No food logged yet"
+            description="Tap + to log your first meal of the day"
+            action={{
+              label: 'Add Food',
+              onClick: () => openAddModal(new Date().getHours()),
+            }}
+          />
+        ) : (
+          <Timeline
+            entries={entries ?? []}
+            onDelete={handleDelete}
+            onAddAtHour={openAddModal}
+          />
+        )}
+
         <button className={styles.fab} onClick={() => openAddModal(new Date().getHours())}>
           +
         </button>
@@ -89,7 +126,7 @@ export default function FoodLogView() {
         hour={modalHour}
         date={dateStr}
         onClose={() => setModalOpen(false)}
-        onAdded={refetch}
+        onAdded={handleAdded}
       />
     </div>
   );
