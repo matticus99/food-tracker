@@ -1,0 +1,57 @@
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.label {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.suffix {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+}
+
+.field input,
+.field select {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  width: 100px;
+  text-align: right;
+}
+
+.field select {
+  width: auto;
+  text-align: left;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--accent-indigo);
+}
+
+.field input[type="range"] {
+  border: none;
+  background: none;
+  width: 120px;
+  accent-color: var(--accent-indigo);
+}
