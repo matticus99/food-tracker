@@ -1,0 +1,55 @@
+import { Router } from 'express';
+import multer from 'multer';
+import { db } from '../db/connection.js';
+import { users, dailyIntake } from '../db/schema.js';
+import { eq } from 'drizzle-orm';
+import { AppError } from '../middleware/errorHandler.js';
+import { importMacroFactor } from '../services/macrofactorImport.js';
+
+const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+async function getUserId(): Promise<string> {
+  const [user] = await db.select({ id: users.id }).from(users).limit(1);
+  if (!user) throw new AppError(404, 'No user found');
+  return user.id;
+}
+
+// POST /api/import/macrofactor — upload .xlsx file
+router.post('/macrofactor', upload.single('file'), async (req, res, next) => {
+  try {
+    const userId = await getUserId();
+
+    if (!req.file) {
+      throw new AppError(400, 'No file uploaded. Send as multipart form with field name "file"');
+    }
+
+    if (!req.file.originalname.endsWith('.xlsx')) {
+      throw new AppError(400, 'Only .xlsx files are supported');
+    }
+
+    const summary = await importMacroFactor(req.file.buffer, userId);
+    res.json({ success: true, summary });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/import/status — check if import has been done
+router.get('/status', async (_req, res, next) => {
+  try {
+    const userId = await getUserId();
+
+    const [imported] = await db
+      .select({ id: dailyIntake.id })
+      .from(dailyIntake)
+      .where(eq(dailyIntake.userId, userId))
+      .limit(1);
+
+    res.json({ hasImportedData: !!imported });
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;
