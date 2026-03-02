@@ -40,3 +40,33 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
+.weightBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  align-self: center;
+}
+
+.weightBtn:hover {
+  border-color: var(--accent-violet);
+  background: var(--bg-hover);
+}
+
+.weightIcon {
+  font-size: 1rem;
+}
+
+.weightText {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-violet);
+}

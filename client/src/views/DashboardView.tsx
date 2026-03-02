@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import PageHeader from '../components/layout/PageHeader';
 import DayNavigator from '../components/dashboard/DayNavigator';
 import WeekStrip from '../components/dashboard/WeekStrip';
 import CalorieRing from '../components/dashboard/CalorieRing';
 import MacroCard from '../components/dashboard/MacroCard';
 import TdeeIntakeChart from '../components/dashboard/TdeeIntakeChart';
+import WeightModal from '../components/dashboard/WeightModal';
 import { useDate } from '../context/DateContext';
 import { useApi } from '../hooks/useApi';
 import styles from './DashboardView.module.css';
@@ -26,6 +27,12 @@ interface User {
   proteinTarget: number;
   fatTarget: number;
   carbTarget: number;
+  currentWeight: string;
+}
+
+interface WeightEntry {
+  date: string;
+  weight: string;
 }
 
 interface TdeePoint {
@@ -44,6 +51,7 @@ interface IntakePoint {
 
 export default function DashboardView() {
   const { date, dateStr } = useDate();
+  const [weightModalOpen, setWeightModalOpen] = useState(false);
 
   const dateLabel = date.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -52,9 +60,16 @@ export default function DashboardView() {
   });
 
   const { data: logEntries } = useApi<LogEntry[]>(`/log?date=${dateStr}`);
-  const { data: user } = useApi<User>('/user');
-  const { data: tdeeData } = useApi<TdeePoint[]>('/analytics/tdee?days=7');
+  const { data: user, refetch: refetchUser } = useApi<User>('/user');
+  const { data: tdeeData, refetch: refetchTdee } = useApi<TdeePoint[]>('/analytics/tdee?days=7');
   const { data: intakeData } = useApi<IntakePoint[]>('/analytics/daily-intake?days=7');
+  const { data: todayWeight, refetch: refetchWeight } = useApi<WeightEntry[]>(`/weight?from=${dateStr}&to=${dateStr}`);
+
+  const handleWeightSaved = useCallback(() => {
+    refetchWeight();
+    refetchTdee();
+    refetchUser();
+  }, [refetchWeight, refetchTdee, refetchUser]);
 
   const totals = useMemo(() => {
     if (!logEntries) return { calories: 0, protein: 0, fat: 0, carbs: 0 };
@@ -129,12 +144,28 @@ export default function DashboardView() {
           carbsTarget={user?.carbTarget ?? 240}
         />
 
+        <button className={styles.weightBtn} onClick={() => setWeightModalOpen(true)}>
+          <span className={styles.weightIcon}>⚖️</span>
+          <span className={styles.weightText}>
+            {todayWeight && todayWeight.length > 0
+              ? `${Number(todayWeight[0]!.weight).toFixed(1)} lbs`
+              : 'Log Weight'}
+          </span>
+        </button>
+
         <TdeeIntakeChart
           data={chartData.points}
           avgTdee={chartData.avgTdee}
           avgIntake={chartData.avgIntake}
         />
       </div>
+      <WeightModal
+        open={weightModalOpen}
+        date={dateStr}
+        currentWeight={todayWeight?.[0] ? Number(todayWeight[0].weight) : user?.currentWeight ? Number(user.currentWeight) : undefined}
+        onClose={() => setWeightModalOpen(false)}
+        onSaved={handleWeightSaved}
+      />
     </div>
   );
 }

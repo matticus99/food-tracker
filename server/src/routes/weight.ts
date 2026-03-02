@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { db } from '../db/connection.js';
-import { weightLog, users } from '../db/schema.js';
+import { weightLog, dailyIntake, foodLog, foods, tdeeHistory, users } from '../db/schema.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { calculateTdeeHistory } from '../services/tdee.js';
 
 const router = Router();
 
@@ -65,11 +66,106 @@ router.post('/', async (req, res, next) => {
         .returning();
     }
 
+    // Trigger TDEE recalculation in background
+    recalculateTdee(userId).catch(() => {});
+
     res.status(201).json(entry);
   } catch (err) {
     next(err);
   }
 });
+
+async function recalculateTdee(userId: string) {
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) return;
+
+  const smoothing = Number(user.tdeeSmoothingFactor) || 0.1;
+
+  // Get all weights
+  const weights = await db
+    .select()
+    .from(weightLog)
+    .where(eq(weightLog.userId, userId))
+    .orderBy(weightLog.date);
+
+  // Get all intake (from daily_intake or aggregated food_log)
+  let intakeMap = new Map<string, number>();
+
+  const imported = await db
+    .select()
+    .from(dailyIntake)
+    .where(eq(dailyIntake.userId, userId))
+    .orderBy(dailyIntake.date);
+
+  if (imported.length > 0) {
+    for (const i of imported) {
+      intakeMap.set(i.date, Number(i.calories));
+    }
+  } else {
+    const logEntries = await db
+      .select({ date: foodLog.date, servings: foodLog.servings, calories: foods.calories })
+      .from(foodLog)
+      .innerJoin(foods, eq(foodLog.foodId, foods.id))
+      .where(eq(foodLog.userId, userId))
+      .orderBy(foodLog.date);
+
+    for (const e of logEntries) {
+      const s = Number(e.servings) || 1;
+      const cal = (Number(e.calories) || 0) * s;
+      intakeMap.set(e.date, (intakeMap.get(e.date) ?? 0) + cal);
+    }
+  }
+
+  // Build data points where both weight and intake exist
+  const dataPoints = weights
+    .filter(w => intakeMap.has(w.date))
+    .map(w => ({
+      date: w.date,
+      weight: Number(w.weight),
+      calories: intakeMap.get(w.date)!,
+    }));
+
+  if (dataPoints.length < 2) return;
+
+  const results = calculateTdeeHistory(dataPoints, smoothing);
+
+  // Upsert TDEE history
+  for (const r of results) {
+    const existing = await db
+      .select()
+      .from(tdeeHistory)
+      .where(and(eq(tdeeHistory.userId, userId), eq(tdeeHistory.date, r.date)))
+      .limit(1);
+
+    if (existing.length > 0) {
+      await db
+        .update(tdeeHistory)
+        .set({
+          tdeeEstimate: String(r.tdeeEstimate),
+          caloriesConsumed: String(r.caloriesConsumed),
+          weightUsed: String(r.weightUsed),
+        })
+        .where(and(eq(tdeeHistory.userId, userId), eq(tdeeHistory.date, r.date)));
+    } else {
+      await db.insert(tdeeHistory).values({
+        userId,
+        date: r.date,
+        tdeeEstimate: String(r.tdeeEstimate),
+        caloriesConsumed: String(r.caloriesConsumed),
+        weightUsed: String(r.weightUsed),
+      });
+    }
+  }
+
+  // Also update user's current weight
+  const latestWeight = weights[weights.length - 1];
+  if (latestWeight) {
+    await db
+      .update(users)
+      .set({ currentWeight: latestWeight.weight, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+}
 
 // PUT /api/weight/:id
 router.put('/:id', async (req, res, next) => {
