@@ -1,0 +1,63 @@
+.timeline {
+  position: relative;
+  padding-left: 72px;
+}
+
+.line {
+  position: absolute;
+  left: 52px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-subtle);
+}
+
+.slot {
+  position: relative;
+  padding: var(--space-sm) 0;
+  min-height: 48px;
+}
+
+.timeLabel {
+  position: absolute;
+  left: -72px;
+  top: var(--space-sm);
+  width: 48px;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+
+.timeLabel.active {
+  color: var(--accent-indigo);
+  font-weight: 600;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.addBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px dashed var(--border-default);
+  background: none;
+  color: var(--text-tertiary);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.addBtn:hover {
+  border-color: var(--accent-indigo);
+  color: var(--accent-indigo);
+  background: rgba(99, 102, 241, 0.08);
+}
