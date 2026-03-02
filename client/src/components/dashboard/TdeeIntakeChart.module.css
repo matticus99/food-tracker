@@ -1,0 +1,95 @@
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.badge {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+  color: var(--text-tertiary);
+}
+
+.stats {
+  display: flex;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.statDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.statLabel {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.statVal {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.chart {
+  width: 100%;
+  height: 80px;
+  display: block;
+}
+
+.empty {
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: var(--space-lg) 0;
+}
+
+.legend {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  margin-top: var(--space-sm);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+}
+
+.legendLine {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+}
