@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import userRoutes from './routes/user.js';
 import foodsRoutes from './routes/foods.js';
@@ -17,7 +18,8 @@ const PORT = parseInt(process.env.PORT ?? '3001', 10);
 // ── Middleware ──
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173' }));
-app.use(express.json());
+app.use(express.json({ limit: '16kb' }));
+app.use(morgan('short'));
 
 // ── Rate limiting ──
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
