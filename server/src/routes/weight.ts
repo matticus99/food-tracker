@@ -67,7 +67,9 @@ router.post('/', async (req, res, next) => {
     }
 
     // Trigger TDEE recalculation in background
-    recalculateTdee(userId).catch(() => {});
+    recalculateTdee(userId).catch((err) => {
+      console.error('[TDEE Recalc Error]', err.message);
+    });
 
     res.status(201).json(entry);
   } catch (err) {
@@ -178,6 +180,12 @@ router.put('/:id', async (req, res, next) => {
       .returning();
 
     if (!entry) throw new AppError(404, 'Weight entry not found');
+
+    // Trigger TDEE recalculation in background
+    recalculateTdee(userId).catch((err) => {
+      console.error('[TDEE Recalc Error]', err.message);
+    });
+
     res.json(entry);
   } catch (err) {
     next(err);

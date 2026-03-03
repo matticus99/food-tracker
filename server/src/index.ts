@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import userRoutes from './routes/user.js';
 import foodsRoutes from './routes/foods.js';
 import foodLogRoutes from './routes/foodLog.js';
@@ -13,6 +14,7 @@ const app = express();
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 
 // ── Middleware ──
+app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173' }));
 app.use(express.json());
 

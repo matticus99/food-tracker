@@ -14,8 +14,9 @@ async function getUser() {
 }
 
 function daysAgo(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  d.setUTCDate(d.getUTCDate() - days);
   return d.toISOString().split('T')[0]!;
 }
 

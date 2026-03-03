@@ -23,9 +23,17 @@ router.put('/', async (req, res, next) => {
     const [user] = await db.select().from(users).limit(1);
     if (!user) throw new AppError(404, 'No user found');
 
+    const { age, sex, heightInches, currentWeight, objective, activityLevel,
+            calorieTarget, proteinTarget, fatTarget, carbTarget,
+            tdeeSmoothingFactor } = req.body;
+
     const [updated] = await db
       .update(users)
-      .set({ ...req.body, updatedAt: new Date() })
+      .set({
+        age, sex, heightInches, currentWeight, objective, activityLevel,
+        calorieTarget, proteinTarget, fatTarget, carbTarget,
+        tdeeSmoothingFactor, updatedAt: new Date(),
+      })
       .where(eq(users.id, user.id))
       .returning();
 

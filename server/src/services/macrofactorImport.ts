@@ -17,8 +17,9 @@ interface ImportSummary {
  */
 function excelDateToISO(serial: number): string {
   // Excel epoch is Jan 0 1900 (with the Lotus 1-2-3 leap year bug)
-  const excelEpoch = new Date(1899, 11, 30);
-  const date = new Date(excelEpoch.getTime() + serial * 86400000);
+  // Use UTC to avoid timezone-dependent date shifts
+  const excelEpochMs = Date.UTC(1899, 11, 30);
+  const date = new Date(excelEpochMs + serial * 86400000);
   return date.toISOString().split('T')[0]!;
 }
 

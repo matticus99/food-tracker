@@ -25,7 +25,8 @@ router.get('/', async (req, res, next) => {
     }
 
     if (search && typeof search === 'string') {
-      conditions.push(ilike(foods.name, `%${search}%`));
+      const escaped = search.replace(/[%_\\]/g, '\\$&');
+      conditions.push(ilike(foods.name, `%${escaped}%`));
     }
 
     const result = await db
@@ -44,9 +45,13 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const userId = await getUserId();
+    const { name, emoji, category, servingLabel, servingGrams,
+            calories, protein, fat, carbs } = req.body;
+
     const [food] = await db
       .insert(foods)
-      .values({ ...req.body, userId })
+      .values({ name, emoji, category, servingLabel, servingGrams,
+                calories, protein, fat, carbs, userId })
       .returning();
 
     res.status(201).json(food);
@@ -59,9 +64,13 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const userId = await getUserId();
+    const { name, emoji, category, servingLabel, servingGrams,
+            calories, protein, fat, carbs } = req.body;
+
     const [food] = await db
       .update(foods)
-      .set({ ...req.body, updatedAt: new Date() })
+      .set({ name, emoji, category, servingLabel, servingGrams,
+             calories, protein, fat, carbs, updatedAt: new Date() })
       .where(and(eq(foods.id, req.params.id!), eq(foods.userId, userId)))
       .returning();
 

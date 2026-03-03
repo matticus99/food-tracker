@@ -77,9 +77,11 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const userId = await getUserId();
+    const { servings, timeHour, date } = req.body;
+
     const [entry] = await db
       .update(foodLog)
-      .set({ ...req.body, updatedAt: new Date() })
+      .set({ servings, timeHour, date, updatedAt: new Date() })
       .where(and(eq(foodLog.id, req.params.id!), eq(foodLog.userId, userId)))
       .returning();
 
