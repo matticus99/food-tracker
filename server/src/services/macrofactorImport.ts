@@ -68,7 +68,7 @@ export async function importMacroFactor(
   userId: string,
 ): Promise<ImportSummary> {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
 
   const summary: ImportSummary = {
     intakeDays: 0,

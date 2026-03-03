@@ -78,9 +78,18 @@ router.put('/:id', async (req, res, next) => {
     const userId = await getUserId();
     const validated = validate(foodUpdateSchema, req.body);
 
+    const { servingGrams, calories, protein, fat, carbs, ...rest } = validated;
     const [food] = await db
       .update(foods)
-      .set({ ...validated, updatedAt: new Date() })
+      .set({
+        ...rest,
+        ...(servingGrams !== undefined && { servingGrams: servingGrams != null ? String(servingGrams) : null }),
+        ...(calories !== undefined && { calories: calories != null ? String(calories) : null }),
+        ...(protein !== undefined && { protein: protein != null ? String(protein) : null }),
+        ...(fat !== undefined && { fat: fat != null ? String(fat) : null }),
+        ...(carbs !== undefined && { carbs: carbs != null ? String(carbs) : null }),
+        updatedAt: new Date(),
+      })
       .where(and(eq(foods.id, req.params.id!), eq(foods.userId, userId)))
       .returning();
 

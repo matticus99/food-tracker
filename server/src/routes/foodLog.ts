@@ -76,9 +76,14 @@ router.put('/:id', async (req, res, next) => {
     const userId = await getUserId();
     const validated = validate(foodLogUpdateSchema, req.body);
 
+    const { servings, ...rest } = validated;
     const [entry] = await db
       .update(foodLog)
-      .set({ ...validated, updatedAt: new Date() })
+      .set({
+        ...rest,
+        ...(servings !== undefined && { servings: String(servings) }),
+        updatedAt: new Date(),
+      })
       .where(and(eq(foodLog.id, req.params.id!), eq(foodLog.userId, userId)))
       .returning();
 

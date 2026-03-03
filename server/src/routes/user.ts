@@ -31,9 +31,13 @@ router.put('/', async (req, res, next) => {
     const [updated] = await db
       .update(users)
       .set({
-        age, sex, heightInches, currentWeight, objective, activityLevel,
+        age, sex, objective,
         calorieTarget, proteinTarget, fatTarget, carbTarget,
-        tdeeSmoothingFactor, updatedAt: new Date(),
+        heightInches: heightInches != null ? String(heightInches) : heightInches,
+        currentWeight: currentWeight != null ? String(currentWeight) : currentWeight,
+        activityLevel: activityLevel != null ? String(activityLevel) : activityLevel,
+        tdeeSmoothingFactor: tdeeSmoothingFactor != null ? String(tdeeSmoothingFactor) : tdeeSmoothingFactor,
+        updatedAt: new Date(),
       })
       .where(eq(users.id, user.id))
       .returning();

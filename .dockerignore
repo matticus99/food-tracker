@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.git/
+.github/
+.claude/
+.vscode/
+.idea/
+docs/
+*.log
+npm-debug.log*
+.env
+.env.local
+.env.*.local
+.DS_Store
+Thumbs.db
+plan.md

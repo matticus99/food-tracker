@@ -5,15 +5,15 @@ const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM
 export const userUpdateSchema = z.object({
   age: z.number().int().min(1).max(150).nullish(),
   sex: z.enum(['male', 'female']).nullish(),
-  heightInches: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive().max(120)).nullish(),
-  currentWeight: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive().max(1500)).nullish(),
+  heightInches: z.coerce.number().positive().max(120).nullish(),
+  currentWeight: z.coerce.number().positive().max(1500).nullish(),
   objective: z.enum(['cut', 'maintain', 'bulk']).nullish(),
-  activityLevel: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(1).max(3)).nullish(),
+  activityLevel: z.coerce.number().min(1).max(3).nullish(),
   calorieTarget: z.number().int().min(0).max(50000).nullish(),
   proteinTarget: z.number().int().min(0).max(5000).nullish(),
   fatTarget: z.number().int().min(0).max(5000).nullish(),
   carbTarget: z.number().int().min(0).max(5000).nullish(),
-  tdeeSmoothingFactor: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0.01).max(1)).nullish(),
+  tdeeSmoothingFactor: z.coerce.number().min(0.01).max(1).nullish(),
 }).strict();
 
 export const foodCreateSchema = z.object({
@@ -21,11 +21,11 @@ export const foodCreateSchema = z.object({
   emoji: z.string().max(10).nullish(),
   category: z.enum(['proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks', 'other']).default('other'),
   servingLabel: z.string().max(100).nullish(),
-  servingGrams: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0).max(99999)).nullish(),
-  calories: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0).max(99999)).nullish(),
-  protein: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0).max(99999)).nullish(),
-  fat: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0).max(99999)).nullish(),
-  carbs: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0).max(99999)).nullish(),
+  servingGrams: z.coerce.number().min(0).max(99999).nullish(),
+  calories: z.coerce.number().min(0).max(99999).nullish(),
+  protein: z.coerce.number().min(0).max(99999).nullish(),
+  fat: z.coerce.number().min(0).max(99999).nullish(),
+  carbs: z.coerce.number().min(0).max(99999).nullish(),
 }).strict();
 
 export const foodUpdateSchema = foodCreateSchema.partial();
@@ -34,18 +34,18 @@ export const foodLogCreateSchema = z.object({
   foodId: z.string().uuid('foodId must be a valid UUID'),
   date: dateString,
   timeHour: z.number().int().min(0).max(23),
-  servings: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive().max(100)).default(1),
+  servings: z.coerce.number().positive().max(100).default(1),
 }).strict();
 
 export const foodLogUpdateSchema = z.object({
-  servings: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive().max(100)).optional(),
+  servings: z.coerce.number().positive().max(100).optional(),
   timeHour: z.number().int().min(0).max(23).optional(),
   date: dateString.optional(),
 }).strict();
 
 export const weightCreateSchema = z.object({
   date: dateString,
-  weight: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive().max(1500)),
+  weight: z.coerce.number().positive().max(1500),
 }).strict();
 
 export const daysQuerySchema = z.coerce.number().int().positive().max(365).catch(14);
