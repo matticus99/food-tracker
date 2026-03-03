@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { users } from '../db/schema.js';
-import { AppError } from '../middleware/errorHandler.js';
+import { AppError, validate } from '../middleware/errorHandler.js';
+import { userUpdateSchema } from '../validation/schemas.js';
 
 const router = Router();
 
@@ -23,9 +24,17 @@ router.put('/', async (req, res, next) => {
     const [user] = await db.select().from(users).limit(1);
     if (!user) throw new AppError(404, 'No user found');
 
+    const { age, sex, heightInches, currentWeight, objective, activityLevel,
+            calorieTarget, proteinTarget, fatTarget, carbTarget,
+            tdeeSmoothingFactor } = validate(userUpdateSchema, req.body);
+
     const [updated] = await db
       .update(users)
-      .set({ ...req.body, updatedAt: new Date() })
+      .set({
+        age, sex, heightInches, currentWeight, objective, activityLevel,
+        calorieTarget, proteinTarget, fatTarget, carbTarget,
+        tdeeSmoothingFactor, updatedAt: new Date(),
+      })
       .where(eq(users.id, user.id))
       .returning();
 

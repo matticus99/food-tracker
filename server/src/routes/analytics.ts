@@ -4,6 +4,7 @@ import { db } from '../db/connection.js';
 import { users, weightLog, dailyIntake, foodLog, foods, tdeeHistory } from '../db/schema.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { calculateTdeeHistory, calculateBMR, smoothWeightTrend } from '../services/tdee.js';
+import { daysQuerySchema } from '../validation/schemas.js';
 
 const router = Router();
 
@@ -14,8 +15,9 @@ async function getUser() {
 }
 
 function daysAgo(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  d.setUTCDate(d.getUTCDate() - days);
   return d.toISOString().split('T')[0]!;
 }
 
@@ -23,7 +25,7 @@ function daysAgo(days: number): string {
 router.get('/tdee', async (req, res, next) => {
   try {
     const user = await getUser();
-    const days = parseInt(req.query.days as string) || 14;
+    const days = daysQuerySchema.parse(req.query.days ?? 14);
     const fromDate = daysAgo(days);
 
     // First try to get from tdee_history (imported or previously calculated)
@@ -79,7 +81,7 @@ router.get('/tdee', async (req, res, next) => {
 router.get('/weight-trend', async (req, res, next) => {
   try {
     const user = await getUser();
-    const days = parseInt(req.query.days as string) || 14;
+    const days = daysQuerySchema.parse(req.query.days ?? 14);
     const fromDate = daysAgo(days);
 
     const weights = await db
@@ -104,7 +106,7 @@ router.get('/weight-trend', async (req, res, next) => {
 router.get('/daily-intake', async (req, res, next) => {
   try {
     const user = await getUser();
-    const days = parseInt(req.query.days as string) || 7;
+    const days = daysQuerySchema.parse(req.query.days ?? 7);
     const fromDate = daysAgo(days);
 
     // Try daily_intake table first (imported data)
@@ -172,7 +174,7 @@ router.get('/daily-intake', async (req, res, next) => {
 router.get('/actual-vs-goal', async (req, res, next) => {
   try {
     const user = await getUser();
-    const days = parseInt(req.query.days as string) || 7;
+    const days = daysQuerySchema.parse(req.query.days ?? 7);
     const fromDate = daysAgo(days);
     const target = Number(user.calorieTarget) || 2000;
 

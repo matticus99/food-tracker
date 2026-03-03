@@ -28,6 +28,12 @@ router.post('/macrofactor', upload.single('file'), async (req, res, next) => {
       throw new AppError(400, 'Only .xlsx files are supported');
     }
 
+    // Validate file magic bytes (XLSX is a ZIP file: PK signature)
+    if (req.file.buffer.length < 4 ||
+        req.file.buffer[0] !== 0x50 || req.file.buffer[1] !== 0x4B) {
+      throw new AppError(400, 'Invalid file format — not a valid .xlsx file');
+    }
+
     const summary = await importMacroFactor(req.file.buffer, userId);
     res.json({ success: true, summary });
   } catch (err) {
