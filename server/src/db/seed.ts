@@ -55,6 +55,14 @@ const defaultFoods: Array<{
 async function seed() {
   console.log('🌱 Seeding database...');
 
+  // Check if a user already exists (idempotent — safe to re-run)
+  const existing = await db.select().from(users).limit(1);
+  if (existing.length > 0) {
+    console.log('✅ Database already seeded, skipping.');
+    await queryClient.end();
+    return;
+  }
+
   // Create default user
   const [user] = await db
     .insert(users)
