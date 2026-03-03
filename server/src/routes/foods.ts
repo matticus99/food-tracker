@@ -1,25 +1,18 @@
 import { Router } from 'express';
 import { eq, and, ilike } from 'drizzle-orm';
 import { db } from '../db/connection.js';
-import { foods, users } from '../db/schema.js';
+import { foods } from '../db/schema.js';
 import { AppError, validate } from '../middleware/errorHandler.js';
 import { foodCreateSchema, foodUpdateSchema } from '../validation/schemas.js';
 
 const router = Router();
 
-async function getUserId(): Promise<string> {
-  const [user] = await db.select({ id: users.id }).from(users).limit(1);
-  if (!user) throw new AppError(404, 'No user found');
-  return user.id;
-}
-
 // GET /api/foods?category=&search=
 router.get('/', async (req, res, next) => {
   try {
-    const userId = await getUserId();
     const { category, search } = req.query;
 
-    const conditions = [eq(foods.userId, userId)];
+    const conditions = [eq(foods.userId, req.userId)];
 
     if (category && typeof category === 'string' && category !== 'all') {
       conditions.push(eq(foods.category, category as typeof foods.category.enumValues[number]));
@@ -50,14 +43,13 @@ router.get('/', async (req, res, next) => {
 // POST /api/foods
 router.post('/', async (req, res, next) => {
   try {
-    const userId = await getUserId();
     const { name, emoji, category, servingLabel, servingGrams,
             calories, protein, fat, carbs } = validate(foodCreateSchema, req.body);
 
     const [food] = await db
       .insert(foods)
       .values({
-        name, emoji, category, servingLabel, userId,
+        name, emoji, category, servingLabel, userId: req.userId,
         calories: calories != null ? String(calories) : null,
         protein: protein != null ? String(protein) : null,
         fat: fat != null ? String(fat) : null,
@@ -75,7 +67,6 @@ router.post('/', async (req, res, next) => {
 // PUT /api/foods/:id
 router.put('/:id', async (req, res, next) => {
   try {
-    const userId = await getUserId();
     const validated = validate(foodUpdateSchema, req.body);
 
     const { servingGrams, calories, protein, fat, carbs, ...rest } = validated;
@@ -90,7 +81,7 @@ router.put('/:id', async (req, res, next) => {
         ...(carbs !== undefined && { carbs: carbs != null ? String(carbs) : null }),
         updatedAt: new Date(),
       })
-      .where(and(eq(foods.id, req.params.id!), eq(foods.userId, userId)))
+      .where(and(eq(foods.id, req.params.id!), eq(foods.userId, req.userId)))
       .returning();
 
     if (!food) throw new AppError(404, 'Food not found');
@@ -103,10 +94,9 @@ router.put('/:id', async (req, res, next) => {
 // DELETE /api/foods/:id
 router.delete('/:id', async (req, res, next) => {
   try {
-    const userId = await getUserId();
     const [food] = await db
       .delete(foods)
-      .where(and(eq(foods.id, req.params.id!), eq(foods.userId, userId)))
+      .where(and(eq(foods.id, req.params.id!), eq(foods.userId, req.userId)))
       .returning();
 
     if (!food) throw new AppError(404, 'Food not found');

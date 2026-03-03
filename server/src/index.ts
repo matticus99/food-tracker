@@ -10,7 +10,9 @@ import foodLogRoutes from './routes/foodLog.js';
 import weightRoutes from './routes/weight.js';
 import analyticsRoutes from './routes/analytics.js';
 import importRoutes from './routes/import.js';
+import dashboardRoutes from './routes/dashboard.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { userMiddleware } from './middleware/userMiddleware.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
@@ -27,6 +29,9 @@ const importLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { e
 app.use('/api', apiLimiter);
 app.use('/api/import', importLimiter);
 
+// ── User middleware (caches userId for all /api routes) ──
+app.use('/api', userMiddleware);
+
 // ── Routes ──
 app.use('/api/user', userRoutes);
 app.use('/api/foods', foodsRoutes);
@@ -34,6 +39,7 @@ app.use('/api/log', foodLogRoutes);
 app.use('/api/weight', weightRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/import', importRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // ── Health check ──
 app.get('/api/health', (_req, res) => {

@@ -25,14 +25,6 @@ interface LogEntry {
   };
 }
 
-interface User {
-  calorieTarget: number;
-  proteinTarget: number;
-  fatTarget: number;
-  carbTarget: number;
-  currentWeight: string;
-}
-
 interface WeightEntry {
   date: string;
   weight: string;
@@ -52,6 +44,22 @@ interface IntakePoint {
   carbs: number;
 }
 
+interface User {
+  calorieTarget: number;
+  proteinTarget: number;
+  fatTarget: number;
+  carbTarget: number;
+  currentWeight: string;
+}
+
+interface DashboardData {
+  log: LogEntry[];
+  user: User;
+  todayWeight: WeightEntry[];
+  tdee: TdeePoint[];
+  intake: IntakePoint[];
+}
+
 export default function DashboardView() {
   const { date, dateStr } = useDate();
   const [weightModalOpen, setWeightModalOpen] = useState(false);
@@ -63,18 +71,18 @@ export default function DashboardView() {
     day: 'numeric',
   });
 
-  const { data: logEntries, loading: logLoading } = useApi<LogEntry[]>(`/log?date=${dateStr}`);
-  const { data: user, refetch: refetchUser } = useApi<User>('/user');
-  const { data: tdeeData, loading: tdeeLoading, refetch: refetchTdee } = useApi<TdeePoint[]>('/analytics/tdee?days=7');
-  const { data: intakeData } = useApi<IntakePoint[]>('/analytics/daily-intake?days=7');
-  const { data: todayWeight, refetch: refetchWeight } = useApi<WeightEntry[]>(`/weight?from=${dateStr}&to=${dateStr}`);
+  const { data, loading, refetch } = useApi<DashboardData>(`/dashboard?date=${dateStr}`);
+
+  const logEntries = data?.log ?? null;
+  const user = data?.user ?? null;
+  const tdeeData = data?.tdee ?? null;
+  const intakeData = data?.intake ?? null;
+  const todayWeight = data?.todayWeight ?? null;
 
   const handleWeightSaved = useCallback(() => {
-    refetchWeight();
-    refetchTdee();
-    refetchUser();
+    refetch();
     toast('Weight logged', 'success');
-  }, [refetchWeight, refetchTdee, refetchUser, toast]);
+  }, [refetch, toast]);
 
   const totals = useMemo(() => {
     if (!logEntries) return { calories: 0, protein: 0, fat: 0, carbs: 0 };
@@ -119,7 +127,7 @@ export default function DashboardView() {
     return new Set(intakeData.map((d) => d.date));
   }, [intakeData]);
 
-  const isLoading = logLoading && !logEntries;
+  const isLoading = loading && !data;
 
   return (
     <div className={viewStyles.view}>
@@ -181,7 +189,7 @@ export default function DashboardView() {
               </span>
             </button>
 
-            {tdeeLoading && !tdeeData ? (
+            {!tdeeData || loading ? (
               <SkeletonCard lines={2} />
             ) : chartData.points.length > 0 ? (
               <div className={viewStyles.staggerIn} style={{ animationDelay: '180ms' }}>

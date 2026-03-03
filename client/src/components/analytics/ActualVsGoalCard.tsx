@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import PeriodSelector from './PeriodSelector';
-import { useApi } from '../../hooks/useApi';
 import styles from './ChartCard.module.css';
 import cardStyles from './ActualVsGoalCard.module.css';
 
-interface DataPoint {
+interface IntakePoint {
   date: string;
-  actual: number;
-  goal: number;
-  diff: number;
+  calories: number;
+}
+
+interface Props {
+  data: IntakePoint[];
+  calorieTarget: number;
 }
 
 const W = 280;
@@ -18,11 +20,23 @@ function buildPath(points: { x: number; y: number }[]): string {
   return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
 }
 
-export default function ActualVsGoalCard() {
+export default function ActualVsGoalCard({ data, calorieTarget }: Props) {
   const [days, setDays] = useState(7);
-  const { data } = useApi<DataPoint[]>(`/analytics/actual-vs-goal?days=${days}`);
 
-  const points = data ?? [];
+  const points = useMemo(() => {
+    if (!data.length) return [];
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffStr = cutoff.toISOString().split('T')[0]!;
+    return data
+      .filter(p => p.date >= cutoffStr)
+      .map(p => ({
+        date: p.date,
+        actual: p.calories,
+        goal: calorieTarget,
+        diff: Math.round((p.calories - calorieTarget) * 10) / 10,
+      }));
+  }, [data, days, calorieTarget]);
 
   let plotPoints: { x: number; y: number }[] = [];
   let goalY = H / 2;

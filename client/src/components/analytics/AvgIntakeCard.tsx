@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import PeriodSelector from './PeriodSelector';
-import { useApi } from '../../hooks/useApi';
 import styles from './ChartCard.module.css';
 
 interface IntakePoint {
@@ -8,23 +7,29 @@ interface IntakePoint {
   calories: number;
 }
 
-interface User {
+interface Props {
+  data: IntakePoint[];
   calorieTarget: number;
 }
 
 const W = 280;
 const H = 70;
 
-export default function AvgIntakeCard() {
+export default function AvgIntakeCard({ data, calorieTarget }: Props) {
   const [days, setDays] = useState(7);
-  const { data } = useApi<IntakePoint[]>(`/analytics/daily-intake?days=${days}`);
-  const { data: user } = useApi<User>('/user');
 
-  const points = data ?? [];
+  const points = useMemo(() => {
+    if (!data.length) return [];
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffStr = cutoff.toISOString().split('T')[0]!;
+    return data.filter(p => p.date >= cutoffStr);
+  }, [data, days]);
+
+  const target = calorieTarget;
   const avg = points.length > 0
     ? Math.round(points.reduce((s, p) => s + p.calories, 0) / points.length)
     : null;
-  const target = user?.calorieTarget ?? 2200;
 
   let maxVal = 0;
   if (points.length > 0) {

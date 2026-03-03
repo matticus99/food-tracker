@@ -1,4 +1,3 @@
-import { useApi } from '../../hooks/useApi';
 import styles from './ChartCard.module.css';
 import cardStyles from './TdeeBreakdownCard.module.css';
 
@@ -9,9 +8,11 @@ interface BmrData {
   calorieTarget: number;
 }
 
-export default function TdeeBreakdownCard() {
-  const { data } = useApi<BmrData>('/analytics/bmr');
+interface Props {
+  data: BmrData | null;
+}
 
+export default function TdeeBreakdownCard({ data }: Props) {
   if (!data) {
     return (
       <div className={`${styles.card} ${styles.fullWidth}`}>
