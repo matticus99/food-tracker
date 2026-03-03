@@ -1,0 +1,389 @@
+import { describe, it, expect } from 'vitest';
+import {
+  userUpdateSchema,
+  foodCreateSchema,
+  foodUpdateSchema,
+  foodLogCreateSchema,
+  foodLogUpdateSchema,
+  weightCreateSchema,
+  daysQuerySchema,
+} from './schemas.js';
+
+// ── userUpdateSchema ────────────────────────────────────────────────────────
+
+describe('userUpdateSchema', () => {
+  it('accepts valid full update', () => {
+    const result = userUpdateSchema.parse({
+      age: 30,
+      sex: 'male',
+      heightInches: '70',
+      currentWeight: '185.5',
+      objective: 'cut',
+      activityLevel: '1.5',
+      calorieTarget: 2000,
+      proteinTarget: 150,
+      fatTarget: 65,
+      carbTarget: 250,
+      tdeeSmoothingFactor: '0.1',
+    });
+    expect(result.age).toBe(30);
+    expect(result.heightInches).toBe(70);
+    expect(result.currentWeight).toBe(185.5);
+    expect(result.tdeeSmoothingFactor).toBe(0.1);
+  });
+
+  it('accepts partial update (empty object)', () => {
+    const result = userUpdateSchema.parse({});
+    expect(result).toEqual({});
+  });
+
+  it('rejects age out of range', () => {
+    expect(() => userUpdateSchema.parse({ age: 0 })).toThrow();
+    expect(() => userUpdateSchema.parse({ age: 151 })).toThrow();
+    expect(() => userUpdateSchema.parse({ age: -5 })).toThrow();
+  });
+
+  it('rejects invalid sex enum', () => {
+    expect(() => userUpdateSchema.parse({ sex: 'other' })).toThrow();
+  });
+
+  it('rejects invalid objective enum', () => {
+    expect(() => userUpdateSchema.parse({ objective: 'shred' })).toThrow();
+  });
+
+  it('rejects negative weight', () => {
+    expect(() => userUpdateSchema.parse({ currentWeight: '-100' })).toThrow();
+  });
+
+  it('rejects weight above maximum', () => {
+    expect(() => userUpdateSchema.parse({ currentWeight: '1501' })).toThrow();
+  });
+
+  it('rejects extra fields (strict mode)', () => {
+    expect(() => userUpdateSchema.parse({ id: 'hacked-uuid' })).toThrow();
+    expect(() => userUpdateSchema.parse({ createdAt: '2000-01-01' })).toThrow();
+  });
+
+  it('rejects calorie target above maximum', () => {
+    expect(() => userUpdateSchema.parse({ calorieTarget: 50001 })).toThrow();
+  });
+
+  it('rejects smoothing factor out of range', () => {
+    expect(() => userUpdateSchema.parse({ tdeeSmoothingFactor: '0' })).toThrow();
+    expect(() => userUpdateSchema.parse({ tdeeSmoothingFactor: '1.1' })).toThrow();
+  });
+
+  it('coerces string numbers for decimal fields', () => {
+    const result = userUpdateSchema.parse({
+      heightInches: '72.5',
+      activityLevel: '1.25',
+    });
+    expect(result.heightInches).toBe(72.5);
+    expect(result.activityLevel).toBe(1.25);
+  });
+});
+
+// ── foodCreateSchema ────────────────────────────────────────────────────────
+
+describe('foodCreateSchema', () => {
+  it('accepts valid food with all fields', () => {
+    const result = foodCreateSchema.parse({
+      name: 'Chicken Breast',
+      emoji: '🍗',
+      category: 'proteins',
+      servingLabel: '4 oz',
+      servingGrams: '113',
+      calories: '165',
+      protein: '31',
+      fat: '3.6',
+      carbs: '0',
+    });
+    expect(result.name).toBe('Chicken Breast');
+    expect(result.calories).toBe(165);
+  });
+
+  it('accepts minimal food (name only)', () => {
+    const result = foodCreateSchema.parse({ name: 'Test Food' });
+    expect(result.name).toBe('Test Food');
+    expect(result.category).toBe('other');
+  });
+
+  it('rejects empty name', () => {
+    expect(() => foodCreateSchema.parse({ name: '' })).toThrow();
+  });
+
+  it('rejects missing name', () => {
+    expect(() => foodCreateSchema.parse({ category: 'dairy' })).toThrow();
+  });
+
+  it('rejects name over 255 chars', () => {
+    expect(() => foodCreateSchema.parse({ name: 'a'.repeat(256) })).toThrow();
+  });
+
+  it('rejects invalid category', () => {
+    expect(() => foodCreateSchema.parse({ name: 'X', category: 'junk' })).toThrow();
+  });
+
+  it('rejects negative calories', () => {
+    expect(() => foodCreateSchema.parse({ name: 'X', calories: '-10' })).toThrow();
+  });
+
+  it('rejects extra fields (strict mode prevents mass assignment)', () => {
+    expect(() => foodCreateSchema.parse({
+      name: 'X',
+      id: 'hacked-uuid',
+    })).toThrow();
+    expect(() => foodCreateSchema.parse({
+      name: 'X',
+      userId: 'hacked-uuid',
+    })).toThrow();
+  });
+
+  it('coerces string numbers for numeric fields', () => {
+    const result = foodCreateSchema.parse({
+      name: 'Rice',
+      calories: '200',
+      protein: '4',
+      fat: '0.5',
+      carbs: '45',
+    });
+    expect(result.calories).toBe(200);
+    expect(result.fat).toBe(0.5);
+  });
+});
+
+// ── foodUpdateSchema ────────────────────────────────────────────────────────
+
+describe('foodUpdateSchema', () => {
+  it('accepts partial updates', () => {
+    const result = foodUpdateSchema.parse({ calories: '200' });
+    expect(result.calories).toBe(200);
+    expect(result.name).toBeUndefined();
+  });
+
+  it('accepts empty update', () => {
+    const result = foodUpdateSchema.parse({});
+    // category has a default in foodCreateSchema, so it persists in partial
+    expect(result.name).toBeUndefined();
+    expect(result.calories).toBeUndefined();
+  });
+
+  it('rejects extra fields', () => {
+    expect(() => foodUpdateSchema.parse({ userId: 'x' })).toThrow();
+  });
+});
+
+// ── foodLogCreateSchema ─────────────────────────────────────────────────────
+
+describe('foodLogCreateSchema', () => {
+  it('accepts valid log entry', () => {
+    const result = foodLogCreateSchema.parse({
+      foodId: '550e8400-e29b-41d4-a716-446655440000',
+      date: '2024-03-01',
+      timeHour: 12,
+      servings: '1.5',
+    });
+    expect(result.foodId).toBe('550e8400-e29b-41d4-a716-446655440000');
+    expect(result.servings).toBe(1.5);
+  });
+
+  it('defaults servings to 1', () => {
+    const result = foodLogCreateSchema.parse({
+      foodId: '550e8400-e29b-41d4-a716-446655440000',
+      date: '2024-03-01',
+      timeHour: 12,
+    });
+    expect(result.servings).toBe(1);
+  });
+
+  it('rejects non-UUID foodId', () => {
+    expect(() => foodLogCreateSchema.parse({
+      foodId: 'not-a-uuid',
+      date: '2024-03-01',
+      timeHour: 12,
+    })).toThrow('UUID');
+  });
+
+  it('rejects invalid date format', () => {
+    expect(() => foodLogCreateSchema.parse({
+      foodId: '550e8400-e29b-41d4-a716-446655440000',
+      date: 'March 1st',
+      timeHour: 12,
+    })).toThrow();
+  });
+
+  it('rejects timeHour out of range', () => {
+    expect(() => foodLogCreateSchema.parse({
+      foodId: '550e8400-e29b-41d4-a716-446655440000',
+      date: '2024-03-01',
+      timeHour: -1,
+    })).toThrow();
+
+    expect(() => foodLogCreateSchema.parse({
+      foodId: '550e8400-e29b-41d4-a716-446655440000',
+      date: '2024-03-01',
+      timeHour: 24,
+    })).toThrow();
+  });
+
+  it('rejects zero servings', () => {
+    expect(() => foodLogCreateSchema.parse({
+      foodId: '550e8400-e29b-41d4-a716-446655440000',
+      date: '2024-03-01',
+      timeHour: 12,
+      servings: '0',
+    })).toThrow();
+  });
+
+  it('rejects negative servings', () => {
+    expect(() => foodLogCreateSchema.parse({
+      foodId: '550e8400-e29b-41d4-a716-446655440000',
+      date: '2024-03-01',
+      timeHour: 12,
+      servings: '-1',
+    })).toThrow();
+  });
+
+  it('rejects extra fields (prevents mass assignment)', () => {
+    expect(() => foodLogCreateSchema.parse({
+      foodId: '550e8400-e29b-41d4-a716-446655440000',
+      date: '2024-03-01',
+      timeHour: 12,
+      userId: 'hacked',
+    })).toThrow();
+  });
+
+  it('rejects servings over 100', () => {
+    expect(() => foodLogCreateSchema.parse({
+      foodId: '550e8400-e29b-41d4-a716-446655440000',
+      date: '2024-03-01',
+      timeHour: 12,
+      servings: '101',
+    })).toThrow();
+  });
+});
+
+// ── foodLogUpdateSchema ─────────────────────────────────────────────────────
+
+describe('foodLogUpdateSchema', () => {
+  it('accepts partial update', () => {
+    const result = foodLogUpdateSchema.parse({ servings: '2' });
+    expect(result.servings).toBe(2);
+  });
+
+  it('accepts empty update', () => {
+    const result = foodLogUpdateSchema.parse({});
+    expect(result).toEqual({});
+  });
+
+  it('rejects extra fields', () => {
+    expect(() => foodLogUpdateSchema.parse({ id: 'x' })).toThrow();
+    expect(() => foodLogUpdateSchema.parse({ userId: 'x' })).toThrow();
+    expect(() => foodLogUpdateSchema.parse({ foodId: '550e8400-e29b-41d4-a716-446655440000' })).toThrow();
+  });
+
+  it('rejects negative servings', () => {
+    expect(() => foodLogUpdateSchema.parse({ servings: '-5' })).toThrow();
+  });
+});
+
+// ── weightCreateSchema ──────────────────────────────────────────────────────
+
+describe('weightCreateSchema', () => {
+  it('accepts valid weight', () => {
+    const result = weightCreateSchema.parse({
+      date: '2024-03-01',
+      weight: '185.5',
+    });
+    expect(result.date).toBe('2024-03-01');
+    expect(result.weight).toBe(185.5);
+  });
+
+  it('rejects missing date', () => {
+    expect(() => weightCreateSchema.parse({ weight: '180' })).toThrow();
+  });
+
+  it('rejects missing weight', () => {
+    expect(() => weightCreateSchema.parse({ date: '2024-03-01' })).toThrow();
+  });
+
+  it('rejects invalid date format', () => {
+    expect(() => weightCreateSchema.parse({
+      date: 'not-a-date',
+      weight: '180',
+    })).toThrow();
+  });
+
+  it('rejects zero weight', () => {
+    expect(() => weightCreateSchema.parse({
+      date: '2024-03-01',
+      weight: '0',
+    })).toThrow();
+  });
+
+  it('rejects negative weight', () => {
+    expect(() => weightCreateSchema.parse({
+      date: '2024-03-01',
+      weight: '-100',
+    })).toThrow();
+  });
+
+  it('rejects weight above 1500', () => {
+    expect(() => weightCreateSchema.parse({
+      date: '2024-03-01',
+      weight: '1501',
+    })).toThrow();
+  });
+
+  it('rejects extra fields', () => {
+    expect(() => weightCreateSchema.parse({
+      date: '2024-03-01',
+      weight: '180',
+      id: 'x',
+    })).toThrow();
+  });
+
+  it('coerces string weight to number', () => {
+    const result = weightCreateSchema.parse({
+      date: '2024-03-01',
+      weight: '185',
+    });
+    expect(typeof result.weight).toBe('number');
+  });
+});
+
+// ── daysQuerySchema ─────────────────────────────────────────────────────────
+
+describe('daysQuerySchema', () => {
+  it('parses valid number', () => {
+    expect(daysQuerySchema.parse(14)).toBe(14);
+    expect(daysQuerySchema.parse('30')).toBe(30);
+  });
+
+  it('defaults to 14 for invalid input', () => {
+    expect(daysQuerySchema.parse('abc')).toBe(14);
+    expect(daysQuerySchema.parse(null)).toBe(14);
+    expect(daysQuerySchema.parse(undefined)).toBe(14);
+  });
+
+  it('defaults to 14 for negative numbers', () => {
+    expect(daysQuerySchema.parse(-1)).toBe(14);
+  });
+
+  it('defaults to 14 for numbers above 365', () => {
+    expect(daysQuerySchema.parse(366)).toBe(14);
+  });
+
+  it('accepts boundary values', () => {
+    expect(daysQuerySchema.parse(1)).toBe(1);
+    expect(daysQuerySchema.parse(365)).toBe(365);
+  });
+
+  it('defaults to 14 for zero', () => {
+    expect(daysQuerySchema.parse(0)).toBe(14);
+  });
+
+  it('defaults to 14 for float', () => {
+    expect(daysQuerySchema.parse(3.5)).toBe(14);
+  });
+});

@@ -800,3 +800,117 @@ describe('smoothWeightTrend', () => {
     expect(result[1]!.trend).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Boundary condition tests (security audit)
+// ---------------------------------------------------------------------------
+describe('boundary conditions', () => {
+  describe('calculateTdeeHistory edge cases', () => {
+    it('handles NaN in calories without crashing', () => {
+      const data: TdeeDataPoint[] = [
+        { date: '2025-01-01', weight: 180, calories: 2000 },
+        { date: '2025-01-02', weight: 179, calories: NaN },
+      ];
+      const result = calculateTdeeHistory(data, 0.1);
+      expect(result).toHaveLength(2);
+      expect(isNaN(result[1]!.tdeeEstimate)).toBe(true);
+    });
+
+    it('handles Infinity in calories without crashing', () => {
+      const data: TdeeDataPoint[] = [
+        { date: '2025-01-01', weight: 180, calories: 2000 },
+        { date: '2025-01-02', weight: 179, calories: Infinity },
+      ];
+      const result = calculateTdeeHistory(data, 0.1);
+      expect(result).toHaveLength(2);
+      expect(result[1]!.tdeeEstimate).toBe(Infinity);
+    });
+
+    it('handles NaN in weight without crashing', () => {
+      const data: TdeeDataPoint[] = [
+        { date: '2025-01-01', weight: 180, calories: 2000 },
+        { date: '2025-01-02', weight: NaN, calories: 2000 },
+      ];
+      const result = calculateTdeeHistory(data, 0.1);
+      expect(result).toHaveLength(2);
+    });
+
+    it('handles very large weight change without crashing', () => {
+      const data: TdeeDataPoint[] = [
+        { date: '2025-01-01', weight: 1000, calories: 2000 },
+        { date: '2025-01-02', weight: 100, calories: 2000 },
+      ];
+      const result = calculateTdeeHistory(data, 0.1);
+      expect(result).toHaveLength(2);
+      expect(isFinite(result[1]!.tdeeEstimate)).toBe(true);
+    });
+  });
+
+  describe('calculateBMR edge cases', () => {
+    it('handles negative age (returns a number, no crash)', () => {
+      const bmr = calculateBMR(180, 70, -5, 'male');
+      expect(typeof bmr).toBe('number');
+      expect(isFinite(bmr)).toBe(true);
+    });
+
+    it('handles zero height', () => {
+      const bmr = calculateBMR(180, 0, 30, 'male');
+      expect(typeof bmr).toBe('number');
+      expect(isFinite(bmr)).toBe(true);
+    });
+
+    it('handles zero weight', () => {
+      const bmr = calculateBMR(0, 70, 30, 'male');
+      expect(typeof bmr).toBe('number');
+      expect(isFinite(bmr)).toBe(true);
+    });
+
+    it('handles very large inputs', () => {
+      const bmr = calculateBMR(99999, 99999, 99999, 'male');
+      expect(typeof bmr).toBe('number');
+      expect(isFinite(bmr)).toBe(true);
+    });
+  });
+
+  describe('smoothWeightTrend edge cases', () => {
+    it('handles NaN smoothing factor', () => {
+      const weights = [
+        { date: '2025-01-01', weight: 180 },
+        { date: '2025-01-02', weight: 179 },
+      ];
+      const result = smoothWeightTrend(weights, NaN);
+      expect(result).toHaveLength(2);
+    });
+
+    it('handles negative smoothing factor', () => {
+      const weights = [
+        { date: '2025-01-01', weight: 180 },
+        { date: '2025-01-02', weight: 179 },
+      ];
+      const result = smoothWeightTrend(weights, -0.5);
+      expect(result).toHaveLength(2);
+    });
+
+    it('handles NaN weight', () => {
+      const weights = [
+        { date: '2025-01-01', weight: 180 },
+        { date: '2025-01-02', weight: NaN },
+      ];
+      const result = smoothWeightTrend(weights, 0.1);
+      expect(result).toHaveLength(2);
+    });
+
+    it('handles very large number of data points', () => {
+      const weights = Array.from({ length: 1000 }, (_, i) => ({
+        date: `2025-01-01`,
+        weight: 180 + Math.sin(i) * 2,
+      }));
+      const result = smoothWeightTrend(weights, 0.1);
+      expect(result).toHaveLength(1000);
+      // All trend values should be finite
+      for (const r of result) {
+        expect(isFinite(r.trend)).toBe(true);
+      }
+    });
+  });
+});
