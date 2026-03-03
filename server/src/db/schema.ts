@@ -8,6 +8,7 @@ import {
   timestamp,
   pgEnum,
   uniqueIndex,
+  index,
 } from 'drizzle-orm/pg-core';
 
 // ── Enums ──
@@ -55,7 +56,9 @@ export const foods = pgTable('foods', {
   source: foodSourceEnum('source').default('manual').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => [
+  index('foods_user_id_idx').on(table.userId),
+]);
 
 // ── Food Log ──
 export const foodLog = pgTable('food_log', {
@@ -67,7 +70,11 @@ export const foodLog = pgTable('food_log', {
   servings: decimal('servings', { precision: 5, scale: 2 }).default('1').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => [
+  index('food_log_user_id_idx').on(table.userId),
+  index('food_log_food_id_idx').on(table.foodId),
+  index('food_log_user_date_idx').on(table.userId, table.date),
+]);
 
 // ── Daily Intake (imported or aggregated) ──
 export const dailyIntake = pgTable('daily_intake', {
@@ -82,6 +89,7 @@ export const dailyIntake = pgTable('daily_intake', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   uniqueIndex('daily_intake_user_date_idx').on(table.userId, table.date),
+  index('daily_intake_user_id_idx').on(table.userId),
 ]);
 
 // ── Weight Log ──
@@ -93,6 +101,7 @@ export const weightLog = pgTable('weight_log', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   uniqueIndex('weight_log_user_date_idx').on(table.userId, table.date),
+  index('weight_log_user_id_idx').on(table.userId),
 ]);
 
 // ── TDEE History ──
@@ -106,4 +115,5 @@ export const tdeeHistory = pgTable('tdee_history', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => [
   uniqueIndex('tdee_history_user_date_idx').on(table.userId, table.date),
+  index('tdee_history_user_id_idx').on(table.userId),
 ]);

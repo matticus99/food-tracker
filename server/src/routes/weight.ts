@@ -1,26 +1,20 @@
 import { Router } from 'express';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { eq, and, gte, lte, sql } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { weightLog, dailyIntake, foodLog, foods, tdeeHistory, users } from '../db/schema.js';
 import { AppError, validate } from '../middleware/errorHandler.js';
 import { calculateTdeeHistory } from '../services/tdee.js';
+import { invalidateUserCache } from '../middleware/userMiddleware.js';
 import { weightCreateSchema } from '../validation/schemas.js';
 
 const router = Router();
 
-async function getUserId(): Promise<string> {
-  const [user] = await db.select({ id: users.id }).from(users).limit(1);
-  if (!user) throw new AppError(404, 'No user found');
-  return user.id;
-}
-
 // GET /api/weight?from=&to=
 router.get('/', async (req, res, next) => {
   try {
-    const userId = await getUserId();
     const { from, to } = req.query;
 
-    const conditions = [eq(weightLog.userId, userId)];
+    const conditions = [eq(weightLog.userId, req.userId)];
     if (from && typeof from === 'string') conditions.push(gte(weightLog.date, from));
     if (to && typeof to === 'string') conditions.push(lte(weightLog.date, to));
 
@@ -39,14 +33,13 @@ router.get('/', async (req, res, next) => {
 // POST /api/weight
 router.post('/', async (req, res, next) => {
   try {
-    const userId = await getUserId();
     const { date, weight } = validate(weightCreateSchema, req.body);
 
     // Upsert — update if date exists, otherwise insert
     const existing = await db
       .select()
       .from(weightLog)
-      .where(and(eq(weightLog.userId, userId), eq(weightLog.date, date)))
+      .where(and(eq(weightLog.userId, req.userId), eq(weightLog.date, date)))
       .limit(1);
 
     let entry;
@@ -54,17 +47,17 @@ router.post('/', async (req, res, next) => {
       [entry] = await db
         .update(weightLog)
         .set({ weight: String(weight) })
-        .where(and(eq(weightLog.userId, userId), eq(weightLog.date, date)))
+        .where(and(eq(weightLog.userId, req.userId), eq(weightLog.date, date)))
         .returning();
     } else {
       [entry] = await db
         .insert(weightLog)
-        .values({ userId, date, weight: String(weight) })
+        .values({ userId: req.userId, date, weight: String(weight) })
         .returning();
     }
 
     // Trigger TDEE recalculation in background
-    recalculateTdee(userId).catch((err) => {
+    recalculateTdee(req.userId).catch((err) => {
       console.error('[TDEE Recalc Error]', err.message);
     });
 
@@ -74,6 +67,7 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+// Fix 5: Batch TDEE upsert — replaces loop of 60-90 queries with a single batch
 async function recalculateTdee(userId: string) {
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user) return;
@@ -128,32 +122,24 @@ async function recalculateTdee(userId: string) {
 
   const results = calculateTdeeHistory(dataPoints, smoothing);
 
-  // Upsert TDEE history
-  for (const r of results) {
-    const existing = await db
-      .select()
-      .from(tdeeHistory)
-      .where(and(eq(tdeeHistory.userId, userId), eq(tdeeHistory.date, r.date)))
-      .limit(1);
-
-    if (existing.length > 0) {
-      await db
-        .update(tdeeHistory)
-        .set({
-          tdeeEstimate: String(r.tdeeEstimate),
-          caloriesConsumed: String(r.caloriesConsumed),
-          weightUsed: String(r.weightUsed),
-        })
-        .where(and(eq(tdeeHistory.userId, userId), eq(tdeeHistory.date, r.date)));
-    } else {
-      await db.insert(tdeeHistory).values({
+  // Batch upsert TDEE history — single query instead of N*2-3 queries
+  if (results.length > 0) {
+    await db.insert(tdeeHistory)
+      .values(results.map(r => ({
         userId,
         date: r.date,
         tdeeEstimate: String(r.tdeeEstimate),
         caloriesConsumed: String(r.caloriesConsumed),
         weightUsed: String(r.weightUsed),
+      })))
+      .onConflictDoUpdate({
+        target: [tdeeHistory.userId, tdeeHistory.date],
+        set: {
+          tdeeEstimate: sql`excluded.tdee_estimate`,
+          caloriesConsumed: sql`excluded.calories_consumed`,
+          weightUsed: sql`excluded.weight_used`,
+        },
       });
-    }
   }
 
   // Also update user's current weight
@@ -163,24 +149,24 @@ async function recalculateTdee(userId: string) {
       .update(users)
       .set({ currentWeight: latestWeight.weight, updatedAt: new Date() })
       .where(eq(users.id, userId));
+    invalidateUserCache();
   }
 }
 
 // PUT /api/weight/:id
 router.put('/:id', async (req, res, next) => {
   try {
-    const userId = await getUserId();
     const { weight: weightVal } = validate(weightCreateSchema.pick({ weight: true }), req.body);
     const [entry] = await db
       .update(weightLog)
       .set({ weight: String(weightVal) })
-      .where(and(eq(weightLog.id, req.params.id!), eq(weightLog.userId, userId)))
+      .where(and(eq(weightLog.id, req.params.id!), eq(weightLog.userId, req.userId)))
       .returning();
 
     if (!entry) throw new AppError(404, 'Weight entry not found');
 
     // Trigger TDEE recalculation in background
-    recalculateTdee(userId).catch((err) => {
+    recalculateTdee(req.userId).catch((err) => {
       console.error('[TDEE Recalc Error]', err.message);
     });
 

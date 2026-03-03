@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import PeriodSelector from './PeriodSelector';
-import { useApi } from '../../hooks/useApi';
 import styles from './ChartCard.module.css';
 
 interface TdeePoint {
   date: string;
   tdeeEstimate: number;
   caloriesConsumed: number;
+}
+
+interface Props {
+  data: TdeePoint[];
 }
 
 const W = 280;
@@ -16,11 +19,17 @@ function buildPath(points: { x: number; y: number }[]): string {
   return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
 }
 
-export default function TdeeCard() {
+export default function TdeeCard({ data }: Props) {
   const [days, setDays] = useState(14);
-  const { data } = useApi<TdeePoint[]>(`/analytics/tdee?days=${days}`);
 
-  const points = data ?? [];
+  const points = useMemo(() => {
+    if (!data.length) return [];
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffStr = cutoff.toISOString().split('T')[0]!;
+    return data.filter(p => p.date >= cutoffStr);
+  }, [data, days]);
+
   const latest = points.length > 0 ? Math.round(points[points.length - 1]!.tdeeEstimate) : null;
 
   let plotPoints: { x: number; y: number }[] = [];

@@ -2,28 +2,20 @@ import { Router } from 'express';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { users } from '../db/schema.js';
-import { AppError, validate } from '../middleware/errorHandler.js';
+import { validate } from '../middleware/errorHandler.js';
+import { invalidateUserCache } from '../middleware/userMiddleware.js';
 import { userUpdateSchema } from '../validation/schemas.js';
 
 const router = Router();
 
-// GET /api/user — get the single user (first row)
-router.get('/', async (_req, res, next) => {
-  try {
-    const [user] = await db.select().from(users).limit(1);
-    if (!user) throw new AppError(404, 'No user found. Run seed first.');
-    res.json(user);
-  } catch (err) {
-    next(err);
-  }
+// GET /api/user — get the single user (already fetched by middleware)
+router.get('/', (_req, res) => {
+  res.json(_req.user);
 });
 
 // PUT /api/user — update user settings
 router.put('/', async (req, res, next) => {
   try {
-    const [user] = await db.select().from(users).limit(1);
-    if (!user) throw new AppError(404, 'No user found');
-
     const { age, sex, heightInches, currentWeight, objective, activityLevel,
             calorieTarget, proteinTarget, fatTarget, carbTarget,
             tdeeSmoothingFactor } = validate(userUpdateSchema, req.body);
@@ -39,9 +31,10 @@ router.put('/', async (req, res, next) => {
         tdeeSmoothingFactor: tdeeSmoothingFactor != null ? String(tdeeSmoothingFactor) : tdeeSmoothingFactor,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, user.id))
+      .where(eq(users.id, req.userId))
       .returning();
 
+    invalidateUserCache();
     res.json(updated);
   } catch (err) {
     next(err);

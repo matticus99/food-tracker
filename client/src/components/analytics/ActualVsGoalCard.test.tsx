@@ -1,106 +1,76 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import ActualVsGoalCard from './ActualVsGoalCard';
 
-// ── Setup ────────────────────────────────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().split('T')[0]!;
+}
+
+// ── Test data ───────────────────────────────────────────────────────────────
 
 const mockData = [
-  { date: '2025-01-01', actual: 1800, goal: 2000, diff: -200 },
-  { date: '2025-01-02', actual: 2200, goal: 2000, diff: 200 },
-  { date: '2025-01-03', actual: 1900, goal: 2000, diff: -100 },
+  { date: daysAgo(2), calories: 1800 },
+  { date: daysAgo(1), calories: 2200 },
+  { date: daysAgo(0), calories: 1900 },
 ];
 
-beforeEach(() => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockData),
-    }),
-  );
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
+const calorieTarget = 2000;
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('ActualVsGoalCard', () => {
   it('renders title "Actual vs Goal"', () => {
-    render(<ActualVsGoalCard />);
+    render(<ActualVsGoalCard data={mockData} calorieTarget={calorieTarget} />);
     expect(screen.getByText('Actual vs Goal')).toBeInTheDocument();
   });
 
   it('renders period selector', () => {
-    render(<ActualVsGoalCard />);
+    render(<ActualVsGoalCard data={mockData} calorieTarget={calorieTarget} />);
     expect(screen.getByText('7d')).toBeInTheDocument();
     expect(screen.getByText('14d')).toBeInTheDocument();
     expect(screen.getByText('30d')).toBeInTheDocument();
   });
 
-  it('renders chart with data points', async () => {
-    const { container } = render(<ActualVsGoalCard />);
-
-    await waitFor(() => {
-      const svg = container.querySelector('svg');
-      expect(svg).toBeInTheDocument();
-    });
-  });
-
-  it('renders dots for each data point', async () => {
-    const { container } = render(<ActualVsGoalCard />);
-
-    await waitFor(() => {
-      const circles = container.querySelectorAll('circle');
-      expect(circles.length).toBe(3);
-    });
-  });
-
-  it('renders legend with Under, Over, and Goal', async () => {
-    render(<ActualVsGoalCard />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Under')).toBeInTheDocument();
-      expect(screen.getByText('Over')).toBeInTheDocument();
-      expect(screen.getByText('Goal')).toBeInTheDocument();
-    });
-  });
-
-  it('shows "No data yet" when API returns less than 2 data points', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve([{ date: '2025-01-01', actual: 1800, goal: 2000, diff: -200 }]),
-      }),
+  it('renders chart with data points', () => {
+    const { container } = render(
+      <ActualVsGoalCard data={mockData} calorieTarget={calorieTarget} />,
     );
-
-    render(<ActualVsGoalCard />);
-
-    await waitFor(() => {
-      expect(screen.getByText('No data yet')).toBeInTheDocument();
-    });
+    const svg = container.querySelector('svg');
+    expect(svg).toBeInTheDocument();
   });
 
-  it('shows "No data yet" when API returns empty array', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve([]),
-      }),
+  it('renders dots for each data point', () => {
+    const { container } = render(
+      <ActualVsGoalCard data={mockData} calorieTarget={calorieTarget} />,
     );
+    const circles = container.querySelectorAll('circle');
+    expect(circles.length).toBe(3);
+  });
 
-    render(<ActualVsGoalCard />);
+  it('renders legend with Under, Over, and Goal', () => {
+    render(<ActualVsGoalCard data={mockData} calorieTarget={calorieTarget} />);
+    expect(screen.getByText('Under')).toBeInTheDocument();
+    expect(screen.getByText('Over')).toBeInTheDocument();
+    expect(screen.getByText('Goal')).toBeInTheDocument();
+  });
 
-    await waitFor(() => {
-      expect(screen.getByText('No data yet')).toBeInTheDocument();
-    });
+  it('shows "No data yet" when data has fewer than 2 points', () => {
+    const singlePoint = [{ date: daysAgo(0), calories: 1800 }];
+    render(<ActualVsGoalCard data={singlePoint} calorieTarget={calorieTarget} />);
+    expect(screen.getByText('No data yet')).toBeInTheDocument();
+  });
+
+  it('shows "No data yet" when data is empty', () => {
+    render(<ActualVsGoalCard data={[]} calorieTarget={calorieTarget} />);
+    expect(screen.getByText('No data yet')).toBeInTheDocument();
   });
 
   it('7d is initially active', () => {
-    render(<ActualVsGoalCard />);
+    render(<ActualVsGoalCard data={mockData} calorieTarget={calorieTarget} />);
 
     const btn7 = screen.getByText('7d');
     expect(btn7.classList.contains('active')).toBe(true);
