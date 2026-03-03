@@ -5,13 +5,15 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 100;
+  z-index: 200;
   padding: var(--space-md);
+  padding-bottom: calc(var(--bottomnav-height) + env(safe-area-inset-bottom, 0px) + var(--space-md));
 }
 
 @media (min-width: 768px) {
   .overlay {
     align-items: center;
+    padding-bottom: var(--space-md);
   }
 }
 
