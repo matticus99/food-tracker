@@ -17,6 +17,11 @@ import { userMiddleware } from './middleware/userMiddleware.js';
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 
+// Trust first proxy (nginx) so express-rate-limit sees real client IPs
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 // ── Middleware ──
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173' }));
