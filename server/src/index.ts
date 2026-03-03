@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import userRoutes from './routes/user.js';
 import foodsRoutes from './routes/foods.js';
 import foodLogRoutes from './routes/foodLog.js';
@@ -17,6 +18,12 @@ const PORT = parseInt(process.env.PORT ?? '3001', 10);
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173' }));
 app.use(express.json());
+
+// ── Rate limiting ──
+const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
+const importLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: 'Too many import requests, try again later' } });
+app.use('/api', apiLimiter);
+app.use('/api/import', importLimiter);
 
 // ── Routes ──
 app.use('/api/user', userRoutes);
