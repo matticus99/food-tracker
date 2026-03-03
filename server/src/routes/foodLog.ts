@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { eq, and } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { foodLog, foods, users } from '../db/schema.js';
-import { AppError } from '../middleware/errorHandler.js';
+import { AppError, validate } from '../middleware/errorHandler.js';
+import { foodLogCreateSchema, foodLogUpdateSchema } from '../validation/schemas.js';
 
 const router = Router();
 
@@ -56,15 +57,11 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const userId = await getUserId();
-    const { foodId, date, timeHour, servings } = req.body;
-
-    if (!foodId || !date || timeHour === undefined) {
-      throw new AppError(400, 'foodId, date, and timeHour are required');
-    }
+    const { foodId, date, timeHour, servings } = validate(foodLogCreateSchema, req.body);
 
     const [entry] = await db
       .insert(foodLog)
-      .values({ userId, foodId, date, timeHour, servings: servings ?? '1' })
+      .values({ userId, foodId, date, timeHour, servings: String(servings) })
       .returning();
 
     res.status(201).json(entry);
@@ -77,11 +74,11 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const userId = await getUserId();
-    const { servings, timeHour, date } = req.body;
+    const validated = validate(foodLogUpdateSchema, req.body);
 
     const [entry] = await db
       .update(foodLog)
-      .set({ servings, timeHour, date, updatedAt: new Date() })
+      .set({ ...validated, updatedAt: new Date() })
       .where(and(eq(foodLog.id, req.params.id!), eq(foodLog.userId, userId)))
       .returning();
 

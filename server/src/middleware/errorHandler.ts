@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
+import { ZodError, type ZodSchema } from 'zod';
 
 export class AppError extends Error {
   constructor(
@@ -7,6 +8,19 @@ export class AppError extends Error {
   ) {
     super(message);
     this.name = 'AppError';
+  }
+}
+
+/** Parse data with a Zod schema, throwing AppError(400) on validation failure. */
+export function validate<T>(schema: ZodSchema<T>, data: unknown): T {
+  try {
+    return schema.parse(data);
+  } catch (err) {
+    if (err instanceof ZodError) {
+      const messages = err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ');
+      throw new AppError(400, `Validation error: ${messages}`);
+    }
+    throw err;
   }
 }
 

@@ -2,8 +2,9 @@ import { Router } from 'express';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { weightLog, dailyIntake, foodLog, foods, tdeeHistory, users } from '../db/schema.js';
-import { AppError } from '../middleware/errorHandler.js';
+import { AppError, validate } from '../middleware/errorHandler.js';
 import { calculateTdeeHistory } from '../services/tdee.js';
+import { weightCreateSchema } from '../validation/schemas.js';
 
 const router = Router();
 
@@ -39,11 +40,7 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const userId = await getUserId();
-    const { date, weight } = req.body;
-
-    if (!date || !weight) {
-      throw new AppError(400, 'date and weight are required');
-    }
+    const { date, weight } = validate(weightCreateSchema, req.body);
 
     // Upsert — update if date exists, otherwise insert
     const existing = await db
@@ -56,13 +53,13 @@ router.post('/', async (req, res, next) => {
     if (existing.length > 0) {
       [entry] = await db
         .update(weightLog)
-        .set({ weight })
+        .set({ weight: String(weight) })
         .where(and(eq(weightLog.userId, userId), eq(weightLog.date, date)))
         .returning();
     } else {
       [entry] = await db
         .insert(weightLog)
-        .values({ userId, date, weight })
+        .values({ userId, date, weight: String(weight) })
         .returning();
     }
 
@@ -173,9 +170,10 @@ async function recalculateTdee(userId: string) {
 router.put('/:id', async (req, res, next) => {
   try {
     const userId = await getUserId();
+    const { weight: weightVal } = validate(weightCreateSchema.pick({ weight: true }), req.body);
     const [entry] = await db
       .update(weightLog)
-      .set({ weight: req.body.weight })
+      .set({ weight: String(weightVal) })
       .where(and(eq(weightLog.id, req.params.id!), eq(weightLog.userId, userId)))
       .returning();
 
