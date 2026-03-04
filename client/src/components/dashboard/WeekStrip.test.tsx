@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeekStrip from './WeekStrip';
@@ -52,7 +52,7 @@ describe('WeekStrip', () => {
 
   it('clicking a day button changes the selected date', async () => {
     const user = userEvent.setup();
-    const { container } = renderWithDate(<WeekStrip />);
+    renderWithDate(<WeekStrip />);
 
     const buttons = screen.getAllByRole('button');
     // Click the first button (Monday of the week)

@@ -26,7 +26,7 @@ describe('TdeeIntakeChart', () => {
       { date: '2025-01-01', tdee: 2200, intake: 1800 },
       { date: '2025-01-02', tdee: 2300, intake: 2000 },
     ];
-    const { container } = render(<TdeeIntakeChart data={data} avgTdee={2250} avgIntake={1900} />);
+    render(<TdeeIntakeChart data={data} avgTdee={2250} avgIntake={1900} />);
 
     // "TDEE" appears in both the stat label and legend, so use getAllByText
     const tdeeLabels = screen.getAllByText('TDEE');

@@ -13,9 +13,11 @@ const makeEntry = (
   timeHour: hour,
   servings: overrides?.servings ?? '1',
   food: {
+    id: `food-${id}`,
     name,
     emoji: null,
     servingLabel: 'per serving',
+    servingGrams: null,
     calories: overrides?.calories ?? '200',
     protein: '20',
     fat: '10',
@@ -25,7 +27,7 @@ const makeEntry = (
 
 describe('Timeline', () => {
   it('renders default meal times (7 AM, 12 PM, 6 PM)', () => {
-    render(<Timeline entries={[]} onDelete={vi.fn()} onAddAtHour={vi.fn()} />);
+    render(<Timeline entries={[]} onDelete={vi.fn()} onEdit={vi.fn()} onAddAtHour={vi.fn()} />);
 
     expect(screen.getByText('7 AM')).toBeInTheDocument();
     expect(screen.getByText('12 PM')).toBeInTheDocument();
@@ -34,7 +36,7 @@ describe('Timeline', () => {
 
   it('renders food entries at the correct hour', () => {
     const entries = [makeEntry('1', 7, 'Oatmeal')];
-    render(<Timeline entries={entries} onDelete={vi.fn()} onAddAtHour={vi.fn()} />);
+    render(<Timeline entries={entries} onDelete={vi.fn()} onEdit={vi.fn()} onAddAtHour={vi.fn()} />);
 
     expect(screen.getByText('Oatmeal')).toBeInTheDocument();
     expect(screen.getByText('7 AM')).toBeInTheDocument();
@@ -45,7 +47,7 @@ describe('Timeline', () => {
       makeEntry('1', 12, 'Chicken Breast'),
       makeEntry('2', 12, 'Rice'),
     ];
-    render(<Timeline entries={entries} onDelete={vi.fn()} onAddAtHour={vi.fn()} />);
+    render(<Timeline entries={entries} onDelete={vi.fn()} onEdit={vi.fn()} onAddAtHour={vi.fn()} />);
 
     expect(screen.getByText('Chicken Breast')).toBeInTheDocument();
     expect(screen.getByText('Rice')).toBeInTheDocument();
@@ -53,14 +55,14 @@ describe('Timeline', () => {
 
   it('renders entries at custom hours outside default range', () => {
     const entries = [makeEntry('1', 8, 'Snack')];
-    render(<Timeline entries={entries} onDelete={vi.fn()} onAddAtHour={vi.fn()} />);
+    render(<Timeline entries={entries} onDelete={vi.fn()} onEdit={vi.fn()} onAddAtHour={vi.fn()} />);
 
     expect(screen.getByText('Snack')).toBeInTheDocument();
     expect(screen.getByText('8 AM')).toBeInTheDocument();
   });
 
   it('renders add buttons for each time slot', () => {
-    render(<Timeline entries={[]} onDelete={vi.fn()} onAddAtHour={vi.fn()} />);
+    render(<Timeline entries={[]} onDelete={vi.fn()} onEdit={vi.fn()} onAddAtHour={vi.fn()} />);
 
     // Default hours: 7, 12, 18
     expect(screen.getByLabelText('Add food at 7 AM')).toBeInTheDocument();
@@ -71,7 +73,7 @@ describe('Timeline', () => {
   it('clicking add button calls onAddAtHour with correct hour', async () => {
     const user = userEvent.setup();
     const handleAdd = vi.fn();
-    render(<Timeline entries={[]} onDelete={vi.fn()} onAddAtHour={handleAdd} />);
+    render(<Timeline entries={[]} onDelete={vi.fn()} onEdit={vi.fn()} onAddAtHour={handleAdd} />);
 
     await user.click(screen.getByLabelText('Add food at 12 PM'));
     expect(handleAdd).toHaveBeenCalledWith(12);
@@ -81,7 +83,7 @@ describe('Timeline', () => {
     const user = userEvent.setup();
     const handleDelete = vi.fn();
     const entries = [makeEntry('entry-42', 7, 'Toast')];
-    render(<Timeline entries={entries} onDelete={handleDelete} onAddAtHour={vi.fn()} />);
+    render(<Timeline entries={entries} onDelete={handleDelete} onEdit={vi.fn()} onAddAtHour={vi.fn()} />);
 
     await user.click(screen.getByLabelText('Delete entry'));
     expect(handleDelete).toHaveBeenCalledWith('entry-42');
@@ -94,7 +96,7 @@ describe('Timeline', () => {
       makeEntry('3', 12, 'Lunch'),
       makeEntry('4', 15, 'Afternoon Snack'),
     ];
-    render(<Timeline entries={entries} onDelete={vi.fn()} onAddAtHour={vi.fn()} />);
+    render(<Timeline entries={entries} onDelete={vi.fn()} onEdit={vi.fn()} onAddAtHour={vi.fn()} />);
 
     expect(screen.getByText('5 AM')).toBeInTheDocument();
     expect(screen.getByText('11 AM')).toBeInTheDocument();
@@ -104,7 +106,7 @@ describe('Timeline', () => {
 
   it('multiplies calories by servings', () => {
     const entries = [makeEntry('1', 7, 'Eggs', { calories: '100', servings: '3' })];
-    render(<Timeline entries={entries} onDelete={vi.fn()} onAddAtHour={vi.fn()} />);
+    render(<Timeline entries={entries} onDelete={vi.fn()} onEdit={vi.fn()} onAddAtHour={vi.fn()} />);
 
     // 100 * 3 = 300
     expect(screen.getByText('300')).toBeInTheDocument();
@@ -112,7 +114,7 @@ describe('Timeline', () => {
 
   it('renders timeline line element', () => {
     const { container } = render(
-      <Timeline entries={[]} onDelete={vi.fn()} onAddAtHour={vi.fn()} />
+      <Timeline entries={[]} onDelete={vi.fn()} onEdit={vi.fn()} onAddAtHour={vi.fn()} />
     );
 
     const line = container.querySelector('.line');

@@ -1,11 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { apiFetch } from '../../hooks/useApi';
+import { type Unit, convertAmount, toServings, formatAmount } from '../../utils/unitConversions';
 import styles from './EditFoodModal.module.css';
-
-type Unit = 'g' | 'serving' | 'oz' | 'lb';
-
-const OZ_TO_G = 28.3495;
-const LB_TO_G = 453.592;
 
 export interface EditEntry {
   id: string;
@@ -28,33 +24,6 @@ interface Props {
   onSaved: () => void;
 }
 
-function convertAmount(value: number, fromUnit: Unit, toUnit: Unit, servingGrams: number): number {
-  if (fromUnit === toUnit) return value;
-  let grams: number;
-  switch (fromUnit) {
-    case 'g': grams = value; break;
-    case 'oz': grams = value * OZ_TO_G; break;
-    case 'lb': grams = value * LB_TO_G; break;
-    case 'serving': grams = value * servingGrams; break;
-  }
-  switch (toUnit) {
-    case 'g': return grams;
-    case 'oz': return grams / OZ_TO_G;
-    case 'lb': return grams / LB_TO_G;
-    case 'serving': return servingGrams > 0 ? grams / servingGrams : value;
-  }
-}
-
-function toServings(value: number, unit: Unit, servingGrams: number): number {
-  return convertAmount(value, unit, 'serving', servingGrams);
-}
-
-function formatAmount(value: number): string {
-  if (value === 0) return '0';
-  if (Number.isInteger(value)) return String(value);
-  return parseFloat(value.toFixed(2)).toString();
-}
-
 export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
   const [amount, setAmount] = useState('');
   const [unit, setUnit] = useState<Unit>('g');
@@ -75,10 +44,13 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
 
   const sg = entry ? (Number(entry.food.servingGrams) || 0) : 0;
 
+  // Can we meaningfully convert between weight and servings?
+  const canComputeServings = unit === 'serving' || sg > 0;
+
   const servingsMultiplier = useMemo(() => {
     const val = Number(amount) || 0;
     if (unit === 'serving') return val || 1;
-    if (sg <= 0) return 1;
+    if (sg <= 0) return 0; // Can't convert weight to servings without gram basis
     return toServings(val, unit, sg);
   }, [amount, unit, sg]);
 
@@ -94,24 +66,40 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
 
   if (!entry) return null;
 
-  const hasServingGrams = sg > 0;
-  const units: Unit[] = hasServingGrams ? ['g', 'serving', 'oz', 'lb'] : ['serving'];
+  const units: Unit[] = ['g', 'serving', 'oz', 'lb'];
 
   function handleUnitChange(newUnit: Unit) {
     if (newUnit === unit) return;
     const currentVal = Number(amount) || 0;
+
     if (sg > 0 && currentVal > 0) {
+      // Full conversion possible
       const converted = convertAmount(currentVal, unit, newUnit, sg);
       setAmount(formatAmount(converted));
+    } else if (sg <= 0) {
+      // No servingGrams: weight↔weight is pure math, but serving↔weight can't convert
+      const isCurrentWeight = unit !== 'serving';
+      const isNewWeight = newUnit !== 'serving';
+
+      if (isCurrentWeight && isNewWeight && currentVal > 0) {
+        const converted = convertAmount(currentVal, unit, newUnit, 0);
+        setAmount(formatAmount(converted));
+      } else if (newUnit === 'serving') {
+        setAmount('1');
+      } else {
+        setAmount('');
+      }
     } else if (newUnit === 'serving') {
       setAmount('1');
     } else {
       setAmount('');
     }
+
     setUnit(newUnit);
   }
 
   async function handleSave() {
+    if (!entry) return;
     setSaving(true);
     try {
       await apiFetch(`/log/${entry.id}`, {
@@ -152,13 +140,18 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
             />
             <div className={styles.servingNote}>
               {entry.food.servingLabel}
-              {hasServingGrams && unit !== 'serving' && (
+              {sg > 0 && unit !== 'serving' && (
                 <> · {formatAmount(servingsMultiplier)} serving{servingsMultiplier !== 1 ? 's' : ''}</>
               )}
             </div>
+            {!canComputeServings && (
+              <div className={styles.conversionHint}>
+                Set serving weight in My Foods to enable weight entry
+              </div>
+            )}
           </div>
 
-          {entry.food.calories && (
+          {entry.food.calories && canComputeServings && (
             <div className={styles.macroPreview}>
               <span>{macros.calories} cal</span>
               <span style={{ color: 'var(--accent-cyan)' }}>{macros.protein}g P</span>
@@ -169,7 +162,7 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
 
           <div className={styles.actions}>
             <button className={styles.cancelBtn} onClick={onClose}>Cancel</button>
-            <button className={styles.saveBtn} onClick={handleSave} disabled={saving || !Number(amount)}>
+            <button className={styles.saveBtn} onClick={handleSave} disabled={saving || !Number(amount) || !canComputeServings}>
               {saving ? 'Saving...' : 'Save'}
             </button>
           </div>

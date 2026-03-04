@@ -162,7 +162,7 @@ describe('FoodForm', () => {
     expect(handleClose).toHaveBeenCalledTimes(1);
 
     const postCall = fetchSpy.mock.calls.find(
-      (call: string[]) => call[0] === '/api/foods' && call[1]?.method === 'POST',
+      (call: unknown[]) => call[0] === '/api/foods' && (call[1] as Record<string, unknown>)?.method === 'POST',
     );
     expect(postCall).toBeDefined();
   });
@@ -187,7 +187,7 @@ describe('FoodForm', () => {
     });
 
     const putCall = fetchSpy.mock.calls.find(
-      (call: string[]) => call[0] === '/api/foods/food-1' && call[1]?.method === 'PUT',
+      (call: unknown[]) => call[0] === '/api/foods/food-1' && (call[1] as Record<string, unknown>)?.method === 'PUT',
     );
     expect(putCall).toBeDefined();
   });

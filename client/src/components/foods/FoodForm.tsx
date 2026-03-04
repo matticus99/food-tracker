@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../../hooks/useApi';
+import { type Unit, convertToGrams, convertFromGrams, formatAmount } from '../../utils/unitConversions';
 import styles from './FoodForm.module.css';
 
 interface FoodData {
@@ -22,11 +23,6 @@ interface Props {
   onSaved: () => void;
 }
 
-type Unit = 'g' | 'serving' | 'oz' | 'lb';
-
-const OZ_TO_G = 28.3495;
-const LB_TO_G = 453.592;
-
 const CATEGORIES = [
   'favorites', 'proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks',
 ];
@@ -36,30 +32,6 @@ const EMOJIS = ['🍗', '🥩', '🍳', '🥚', '🍚', '🍞', '🥗', '🥦', 
 function formatNum(v: number): string {
   if (v === 0) return '0';
   return parseFloat(v.toFixed(1)).toString();
-}
-
-function formatAmount(value: number): string {
-  if (value === 0) return '0';
-  if (Number.isInteger(value)) return String(value);
-  return parseFloat(value.toFixed(2)).toString();
-}
-
-function convertToGrams(value: number, unit: Unit, servingGrams: number): number {
-  switch (unit) {
-    case 'g': return value;
-    case 'oz': return value * OZ_TO_G;
-    case 'lb': return value * LB_TO_G;
-    case 'serving': return value * servingGrams;
-  }
-}
-
-function convertFromGrams(grams: number, unit: Unit, servingGrams: number): number {
-  switch (unit) {
-    case 'g': return grams;
-    case 'oz': return grams / OZ_TO_G;
-    case 'lb': return grams / LB_TO_G;
-    case 'serving': return servingGrams > 0 ? grams / servingGrams : 1;
-  }
 }
 
 export default function FoodForm({ open, food, onClose, onSaved }: Props) {
@@ -147,9 +119,8 @@ export default function FoodForm({ open, food, onClose, onSaved }: Props) {
 
   function handleServingAmountChange(value: string) {
     setServingAmount(value);
-    if (!isEdit) return; // In new mode, user sets macros manually
 
-    // Edit mode: scale macros proportionally
+    // Scale macros proportionally when ratios are known
     const val = Number(value) || 0;
     const r = ratios.current;
     if (r.calPerGram <= 0 || val <= 0) return;
@@ -200,7 +171,7 @@ export default function FoodForm({ open, food, onClose, onSaved }: Props) {
     setServingUnit(newUnit);
   }
 
-  // In new mode, when macros change, update ratios
+  // When macros change, update per-gram ratios (if gram basis is set)
   function handleCaloriesChange(value: string) {
     setCalories(value);
     if (currentGrams > 0) ratios.current.calPerGram = (Number(value) || 0) / currentGrams;
@@ -223,10 +194,8 @@ export default function FoodForm({ open, food, onClose, onSaved }: Props) {
 
   if (!open) return null;
 
-  // Determine which units to show
   const origSG = Number(food?.servingGrams) || 0;
-  const hasGramBasis = isEdit ? origSG > 0 : true;
-  const units: Unit[] = hasGramBasis ? ['g', 'serving', 'oz', 'lb'] : ['serving'];
+  const units: Unit[] = ['g', 'serving', 'oz', 'lb'];
 
   // Compute servingGrams for submission
   function getServingGramsForSubmit(): number | null {
@@ -355,7 +324,9 @@ export default function FoodForm({ open, food, onClose, onSaved }: Props) {
             )}
             {isEdit && (
               <span className={styles.hint}>
-                Changing serving size recalculates macros proportionally
+                {origSG > 0
+                  ? 'Changing serving size recalculates macros proportionally'
+                  : 'Set a gram amount to enable unit conversions'}
               </span>
             )}
           </div>
@@ -364,49 +335,41 @@ export default function FoodForm({ open, food, onClose, onSaved }: Props) {
             <div className={styles.field}>
               <label className={styles.label}>Calories</label>
               <input
-                className={`${styles.input} ${isEdit ? styles.inputReadonly : ''}`}
+                className={styles.input}
                 type="number"
                 step="any"
                 value={calories}
                 onChange={(e) => handleCaloriesChange(e.target.value)}
-                readOnly={isEdit}
-                tabIndex={isEdit ? -1 : undefined}
               />
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Protein (g)</label>
               <input
-                className={`${styles.input} ${isEdit ? styles.inputReadonly : ''}`}
+                className={styles.input}
                 type="number"
                 step="any"
                 value={protein}
                 onChange={(e) => handleProteinChange(e.target.value)}
-                readOnly={isEdit}
-                tabIndex={isEdit ? -1 : undefined}
               />
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Fat (g)</label>
               <input
-                className={`${styles.input} ${isEdit ? styles.inputReadonly : ''}`}
+                className={styles.input}
                 type="number"
                 step="any"
                 value={fat}
                 onChange={(e) => handleFatChange(e.target.value)}
-                readOnly={isEdit}
-                tabIndex={isEdit ? -1 : undefined}
               />
             </div>
             <div className={styles.field}>
               <label className={styles.label}>Carbs (g)</label>
               <input
-                className={`${styles.input} ${isEdit ? styles.inputReadonly : ''}`}
+                className={styles.input}
                 type="number"
                 step="any"
                 value={carbs}
                 onChange={(e) => handleCarbsChange(e.target.value)}
-                readOnly={isEdit}
-                tabIndex={isEdit ? -1 : undefined}
               />
             </div>
           </div>

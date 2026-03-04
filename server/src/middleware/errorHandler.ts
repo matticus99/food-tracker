@@ -30,12 +30,12 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ) {
-  console.error('[Error]', err.message);
-
   if (err instanceof AppError) {
+    console.error('[AppError]', err.statusCode, err.message);
     res.status(err.statusCode).json({ error: err.message });
     return;
   }
 
+  console.error('[Error]', err);
   res.status(500).json({ error: 'Internal server error' });
 }

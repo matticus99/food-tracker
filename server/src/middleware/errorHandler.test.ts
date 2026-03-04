@@ -86,7 +86,7 @@ describe('errorHandler', () => {
 
     errorHandler(err, mockReq, res, mockNext);
 
-    expect(console.error).toHaveBeenCalledWith('[Error]', 'Bad input');
+    expect(console.error).toHaveBeenCalledWith('[AppError]', 400, 'Bad input');
   });
 
   it('uses correct status code for various AppErrors', () => {

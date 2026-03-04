@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import JSZip from 'jszip';
 import { db } from '../db/connection.js';
 import { foods, dailyIntake, weightLog, tdeeHistory } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
@@ -7,11 +8,11 @@ import { AppError } from '../middleware/errorHandler.js';
 const MAX_ROWS_PER_SHEET = 5000;
 
 interface ImportSummary {
-  intakeDays: number;
-  weightDays: number;
-  tdeeDays: number;
-  favoriteFoods: number;
-  historyFoods: number;
+  dailyIntakeCount: number;
+  weightLogCount: number;
+  tdeeHistoryCount: number;
+  favoriteFoodsCount: number;
+  historyFoodsCount: number;
   skipped: { intake: number; weight: number; tdee: number; foods: number };
 }
 
@@ -60,6 +61,26 @@ function parseDate(raw: unknown): string | null {
 }
 
 /**
+ * ExcelJS hard-codes a rejection of sheets named "History" (a reserved name
+ * in its Worksheet class). MacroFactor exports include a "History" sheet, so
+ * we pre-process the XLSX (which is a ZIP of XML files) and rename it to
+ * "History_Data" before ExcelJS ever sees it.
+ */
+const HISTORY_ALIAS = 'History_Data';
+
+async function patchHistorySheet(buf: Buffer): Promise<Buffer> {
+  const zip = await JSZip.loadAsync(buf);
+  const wbXmlFile = zip.file('xl/workbook.xml');
+  if (!wbXmlFile) return buf;
+
+  const wbXml = await wbXmlFile.async('string');
+  if (!wbXml.includes('name="History"')) return buf;
+
+  zip.file('xl/workbook.xml', wbXml.replace('name="History"', `name="${HISTORY_ALIAS}"`));
+  return Buffer.from(await zip.generateAsync({ type: 'nodebuffer' }));
+}
+
+/**
  * Parse a MacroFactor .xlsx export and import data into the database.
  * Wrapped in a transaction so partial failures roll back cleanly.
  */
@@ -67,15 +88,16 @@ export async function importMacroFactor(
   buffer: Buffer,
   userId: string,
 ): Promise<ImportSummary> {
+  const patched = await patchHistorySheet(buffer);
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+  await workbook.xlsx.load(patched as unknown as ArrayBuffer);
 
   const summary: ImportSummary = {
-    intakeDays: 0,
-    weightDays: 0,
-    tdeeDays: 0,
-    favoriteFoods: 0,
-    historyFoods: 0,
+    dailyIntakeCount: 0,
+    weightLogCount: 0,
+    tdeeHistoryCount: 0,
+    favoriteFoodsCount: 0,
+    historyFoodsCount: 0,
     skipped: { intake: 0, weight: 0, tdee: 0, foods: 0 },
   };
 
@@ -117,7 +139,7 @@ export async function importMacroFactor(
           carbs: String(carbs),
           source: 'imported',
         });
-        summary.intakeDays++;
+        summary.dailyIntakeCount++;
       }
     }
 
@@ -148,7 +170,7 @@ export async function importMacroFactor(
         }
 
         await tx.insert(weightLog).values({ userId, date, weight: String(weight) });
-        summary.weightDays++;
+        summary.weightLogCount++;
       }
     }
 
@@ -200,7 +222,7 @@ export async function importMacroFactor(
           caloriesConsumed: '0',
           weightUsed: weightUsed ? String(weightUsed) : null,
         });
-        summary.tdeeDays++;
+        summary.tdeeHistoryCount++;
       }
     }
 
@@ -244,12 +266,12 @@ export async function importMacroFactor(
           carbs: carbs !== null ? String(carbs) : null,
           source: 'imported_favorite',
         });
-        summary.favoriteFoods++;
+        summary.favoriteFoodsCount++;
       }
     }
 
     // ── Import History → foods (names only, no macros) ──
-    const historySheet = workbook.getWorksheet('History');
+    const historySheet = workbook.getWorksheet(HISTORY_ALIAS) ?? workbook.getWorksheet('History');
     if (historySheet) {
       const rows = sheetToRows(historySheet);
       if (rows.length > MAX_ROWS_PER_SHEET) {
@@ -277,7 +299,7 @@ export async function importMacroFactor(
           category: 'favorites',
           source: 'imported_history',
         });
-        summary.historyFoods++;
+        summary.historyFoodsCount++;
       }
     }
   });

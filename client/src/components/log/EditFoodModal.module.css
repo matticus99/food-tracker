@@ -171,6 +171,14 @@
   text-align: center;
 }
 
+.conversionHint {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--accent-orange);
+  text-align: center;
+  font-style: italic;
+}
+
 .macroPreview {
   display: flex;
   gap: var(--space-md);

@@ -100,7 +100,7 @@ describe('ErrorBoundary', () => {
     // Our componentDidCatch logs 'ErrorBoundary caught:'
     const calls = consoleSpy.mock.calls;
     const boundaryCall = calls.find(
-      (call) => typeof call[0] === 'string' && call[0].includes('ErrorBoundary caught:')
+      (call: unknown[]) => typeof call[0] === 'string' && call[0].includes('ErrorBoundary caught:')
     );
     expect(boundaryCall).toBeDefined();
   });

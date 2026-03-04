@@ -220,7 +220,7 @@ describe('AddFoodModal', () => {
 
     // Should have made a POST to /api/log
     const postCall = fetchSpy.mock.calls.find(
-      (call: string[]) => call[0] === '/api/log' && call[1]?.method === 'POST',
+      (call: unknown[]) => call[0] === '/api/log' && (call[1] as Record<string, unknown>)?.method === 'POST',
     );
     expect(postCall).toBeDefined();
   });

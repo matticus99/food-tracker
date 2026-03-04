@@ -8,9 +8,11 @@ const defaultProps = {
   emoji: '🍗',
   name: 'Chicken Breast',
   servingLabel: '100g',
+  servingGrams: 100,
   servings: 1,
   calories: 165,
   onDelete: vi.fn(),
+  onEdit: vi.fn(),
 };
 
 describe('FoodEntry', () => {

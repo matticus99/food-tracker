@@ -38,7 +38,7 @@ export default function ImportSection() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.message || `Upload failed (${res.status})`);
+        throw new Error(body.error || body.message || `Upload failed (${res.status})`);
       }
       const data = await res.json();
       setResult(data);
