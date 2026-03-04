@@ -236,7 +236,7 @@ export async function importMacroFactor(
         await tx.insert(foods).values({
           userId,
           name,
-          category: 'other',
+          category: 'favorites',
           servingLabel,
           calories: calories !== null ? String(calories) : null,
           protein: protein !== null ? String(protein) : null,
@@ -274,7 +274,7 @@ export async function importMacroFactor(
         await tx.insert(foods).values({
           userId,
           name,
-          category: 'other',
+          category: 'favorites',
           source: 'imported_history',
         });
         summary.historyFoods++;
