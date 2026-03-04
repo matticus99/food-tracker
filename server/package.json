@@ -28,6 +28,9 @@
     "uuid": "^11.1.0",
     "zod": "^4.3.6"
   },
+  "overrides": {
+    "esbuild": ">=0.25.0"
+  },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
