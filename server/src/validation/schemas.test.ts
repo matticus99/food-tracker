@@ -20,7 +20,7 @@ describe('userUpdateSchema', () => {
       currentWeight: '185.5',
       objective: 'cut',
       activityLevel: '1.5',
-      calorieTarget: 2000,
+      goalPace: 500,
       proteinTarget: 150,
       fatTarget: 65,
       carbTarget: 250,
@@ -64,8 +64,9 @@ describe('userUpdateSchema', () => {
     expect(() => userUpdateSchema.parse({ createdAt: '2000-01-01' })).toThrow();
   });
 
-  it('rejects calorie target above maximum', () => {
-    expect(() => userUpdateSchema.parse({ calorieTarget: 50001 })).toThrow();
+  it('rejects goalPace out of range', () => {
+    expect(() => userUpdateSchema.parse({ goalPace: 50 })).toThrow();
+    expect(() => userUpdateSchema.parse({ goalPace: 2000 })).toThrow();
   });
 
   it('rejects smoothing factor out of range', () => {
@@ -105,7 +106,7 @@ describe('foodCreateSchema', () => {
   it('accepts minimal food (name only)', () => {
     const result = foodCreateSchema.parse({ name: 'Test Food' });
     expect(result.name).toBe('Test Food');
-    expect(result.category).toBe('other');
+    expect(result.category).toBe('favorites');
   });
 
   it('rejects empty name', () => {

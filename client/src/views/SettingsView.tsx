@@ -10,6 +10,15 @@ import { useApi, apiFetch } from '../hooks/useApi';
 import styles from './SettingsView.module.css';
 import viewStyles from './Views.module.css';
 
+interface ComputedCalorieTarget {
+  calorieTarget: number;
+  tdeeUsed: number;
+  tdeeSource: 'adaptive' | 'estimated';
+  objectiveOffset: number;
+  objective: string;
+  goalPace: number;
+}
+
 interface User {
   id: string;
   age: number;
@@ -18,11 +27,12 @@ interface User {
   currentWeight: string;
   objective: string;
   activityLevel: string;
-  calorieTarget: number;
+  goalPace: number;
   proteinTarget: number;
   fatTarget: number;
   carbTarget: number;
   tdeeSmoothingFactor: string;
+  computedCalorieTarget: ComputedCalorieTarget | null;
 }
 
 export default function SettingsView() {
@@ -41,7 +51,7 @@ export default function SettingsView() {
         currentWeight: user.currentWeight,
         objective: user.objective,
         activityLevel: user.activityLevel,
-        calorieTarget: user.calorieTarget,
+        goalPace: user.goalPace,
         proteinTarget: user.proteinTarget,
         fatTarget: user.fatTarget,
         carbTarget: user.carbTarget,
@@ -90,7 +100,7 @@ export default function SettingsView() {
                     type="number"
                     value={form.age ?? ''}
                     onChange={(e) => updateField('age', parseInt(e.target.value) || 0)}
-                    onBlur={save}
+                    onBlur={() => save()}
                   />
                 </SettingsField>
                 <SettingsField label="Sex">
@@ -107,7 +117,7 @@ export default function SettingsView() {
                     type="number"
                     value={form.heightInches ?? ''}
                     onChange={(e) => updateField('heightInches', e.target.value)}
-                    onBlur={save}
+                    onBlur={() => save()}
                   />
                 </SettingsField>
                 <SettingsField label="Weight" suffix="lbs">
@@ -115,7 +125,7 @@ export default function SettingsView() {
                     type="number"
                     value={form.currentWeight ?? ''}
                     onChange={(e) => updateField('currentWeight', e.target.value)}
-                    onBlur={save}
+                    onBlur={() => save()}
                   />
                 </SettingsField>
               </SettingsGroup>
@@ -133,14 +143,37 @@ export default function SettingsView() {
                     <option value="bulk">Bulk</option>
                   </select>
                 </SettingsField>
-                <SettingsField label="Calorie Target" suffix="cal">
-                  <input
-                    type="number"
-                    value={form.calorieTarget ?? ''}
-                    onChange={(e) => updateField('calorieTarget', parseInt(e.target.value) || 0)}
-                    onBlur={save}
-                  />
+                <SettingsField label="Rate">
+                  <select
+                    value={String((form.goalPace ?? 500) / 500)}
+                    onChange={(e) => {
+                      const pace = Math.round(Number(e.target.value) * 500);
+                      updateField('goalPace', pace);
+                      save({ goalPace: pace } as Partial<User>);
+                    }}
+                  >
+                    <option value="0.5">0.5 lb / week</option>
+                    <option value="1">1 lb / week</option>
+                    <option value="1.5">1.5 lb / week</option>
+                    <option value="2">2 lb / week</option>
+                  </select>
                 </SettingsField>
+                <SettingsField label="Calorie Target">
+                  <div className={styles.readOnlyValue}>
+                    {user?.computedCalorieTarget
+                      ? `${user.computedCalorieTarget.calorieTarget} cal`
+                      : '—'}
+                  </div>
+                </SettingsField>
+                {user?.computedCalorieTarget && (
+                  <div className={styles.targetBreakdown}>
+                    {user.computedCalorieTarget.tdeeSource === 'adaptive' ? 'Adaptive' : 'Est.'} TDEE {user.computedCalorieTarget.tdeeUsed}
+                    {user.computedCalorieTarget.objectiveOffset !== 0 && (
+                      <> {user.computedCalorieTarget.objectiveOffset > 0 ? '+' : '−'} {Math.abs(user.computedCalorieTarget.objectiveOffset)} {user.computedCalorieTarget.objective}</>
+                    )}
+                    {' = '}{user.computedCalorieTarget.calorieTarget}
+                  </div>
+                )}
               </SettingsGroup>
             </div>
 
@@ -151,7 +184,7 @@ export default function SettingsView() {
                     type="number"
                     value={form.proteinTarget ?? ''}
                     onChange={(e) => updateField('proteinTarget', parseInt(e.target.value) || 0)}
-                    onBlur={save}
+                    onBlur={() => save()}
                   />
                 </SettingsField>
                 <SettingsField label="Fat" suffix="g">
@@ -159,7 +192,7 @@ export default function SettingsView() {
                     type="number"
                     value={form.fatTarget ?? ''}
                     onChange={(e) => updateField('fatTarget', parseInt(e.target.value) || 0)}
-                    onBlur={save}
+                    onBlur={() => save()}
                   />
                 </SettingsField>
                 <SettingsField label="Carbs" suffix="g">
@@ -167,7 +200,7 @@ export default function SettingsView() {
                     type="number"
                     value={form.carbTarget ?? ''}
                     onChange={(e) => updateField('carbTarget', parseInt(e.target.value) || 0)}
-                    onBlur={save}
+                    onBlur={() => save()}
                   />
                 </SettingsField>
               </SettingsGroup>
@@ -195,8 +228,8 @@ export default function SettingsView() {
                     step="0.01"
                     value={smoothVal}
                     onChange={(e) => updateField('tdeeSmoothingFactor', e.target.value)}
-                    onMouseUp={save}
-                    onTouchEnd={save}
+                    onMouseUp={() => save()}
+                    onTouchEnd={() => save()}
                   />
                 </SettingsField>
               </SettingsGroup>

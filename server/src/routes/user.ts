@@ -5,26 +5,32 @@ import { users } from '../db/schema.js';
 import { validate } from '../middleware/errorHandler.js';
 import { invalidateUserCache } from '../middleware/userMiddleware.js';
 import { userUpdateSchema } from '../validation/schemas.js';
+import { getComputedCalorieTarget } from '../services/calorieTarget.js';
 
 const router = Router();
 
-// GET /api/user — get the single user (already fetched by middleware)
-router.get('/', (_req, res) => {
-  res.json(_req.user);
+// GET /api/user — get the single user + computed calorie target
+router.get('/', async (req, res, next) => {
+  try {
+    const computedCalorieTarget = await getComputedCalorieTarget(req.user);
+    res.json({ ...req.user, computedCalorieTarget });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // PUT /api/user — update user settings
 router.put('/', async (req, res, next) => {
   try {
     const { age, sex, heightInches, currentWeight, objective, activityLevel,
-            calorieTarget, proteinTarget, fatTarget, carbTarget,
+            goalPace, proteinTarget, fatTarget, carbTarget,
             tdeeSmoothingFactor } = validate(userUpdateSchema, req.body);
 
     const [updated] = await db
       .update(users)
       .set({
-        age, sex, objective,
-        calorieTarget, proteinTarget, fatTarget, carbTarget,
+        age, sex, objective, goalPace,
+        proteinTarget, fatTarget, carbTarget,
         heightInches: heightInches != null ? String(heightInches) : heightInches,
         currentWeight: currentWeight != null ? String(currentWeight) : currentWeight,
         activityLevel: activityLevel != null ? String(activityLevel) : activityLevel,

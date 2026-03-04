@@ -12,6 +12,7 @@ interface CachedUser {
   objective: 'cut' | 'maintain' | 'bulk' | null;
   activityLevel: string | null;
   calorieTarget: number | null;
+  goalPace: number | null;
   proteinTarget: number | null;
   fatTarget: number | null;
   carbTarget: number | null;

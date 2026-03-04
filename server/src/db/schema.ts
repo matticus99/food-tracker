@@ -32,6 +32,7 @@ export const users = pgTable('users', {
   objective: objectiveEnum('objective').default('maintain'),
   activityLevel: decimal('activity_level', { precision: 4, scale: 2 }).default('1.25'),
   calorieTarget: integer('calorie_target'),
+  goalPace: integer('goal_pace').default(500),
   proteinTarget: integer('protein_target'),
   fatTarget: integer('fat_target'),
   carbTarget: integer('carb_target'),

@@ -6,6 +6,21 @@
   gap: var(--space-md);
 }
 
+.readOnlyValue {
+  font-family: var(--font-mono, var(--font-body));
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 6px 0;
+}
+
+.targetBreakdown {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  padding: 0 var(--space-md) var(--space-sm);
+  font-family: var(--font-body);
+}
+
 .saving {
   text-align: center;
   font-family: var(--font-body);

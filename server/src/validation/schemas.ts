@@ -9,7 +9,7 @@ export const userUpdateSchema = z.object({
   currentWeight: z.coerce.number().positive().max(1500).nullish(),
   objective: z.enum(['cut', 'maintain', 'bulk']).nullish(),
   activityLevel: z.coerce.number().min(1).max(3).nullish(),
-  calorieTarget: z.number().int().min(0).max(50000).nullish(),
+  goalPace: z.number().int().min(125).max(1500).nullish(),
   proteinTarget: z.number().int().min(0).max(5000).nullish(),
   fatTarget: z.number().int().min(0).max(5000).nullish(),
   carbTarget: z.number().int().min(0).max(5000).nullish(),

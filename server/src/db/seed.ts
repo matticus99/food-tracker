@@ -73,7 +73,7 @@ async function seed() {
       currentWeight: '180',
       objective: 'maintain',
       activityLevel: '1.25',
-      calorieTarget: 2200,
+      goalPace: 500,
       proteinTarget: 180,
       fatTarget: 70,
       carbTarget: 240,

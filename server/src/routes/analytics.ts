@@ -4,6 +4,7 @@ import { db } from '../db/connection.js';
 import { weightLog, dailyIntake, foodLog, foods, tdeeHistory } from '../db/schema.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { calculateTdeeHistory, calculateBMR, smoothWeightTrend } from '../services/tdee.js';
+import { getComputedCalorieTarget } from '../services/calorieTarget.js';
 import { daysQuerySchema } from '../validation/schemas.js';
 
 const router = Router();
@@ -119,6 +120,8 @@ router.get('/summary', async (req, res, next) => {
       smoothing,
     );
 
+    const computedTarget = await getComputedCalorieTarget(user);
+
     // BMR
     const weight = Number(user.currentWeight);
     const height = Number(user.heightInches);
@@ -133,13 +136,13 @@ router.get('/summary', async (req, res, next) => {
         bmr: Math.round(bmrVal),
         activityLevel,
         estimatedTdee,
-        calorieTarget: user.calorieTarget ? Number(user.calorieTarget) : estimatedTdee,
+        calorieTarget: computedTarget?.calorieTarget ?? estimatedTdee,
       };
     }
 
     // Goals
     const goals = {
-      calorieTarget: user.calorieTarget ? Number(user.calorieTarget) : 2000,
+      calorieTarget: computedTarget?.calorieTarget ?? 2000,
       proteinTarget: user.proteinTarget ? Number(user.proteinTarget) : 150,
       fatTarget: user.fatTarget ? Number(user.fatTarget) : 70,
       carbTarget: user.carbTarget ? Number(user.carbTarget) : 240,
@@ -251,7 +254,8 @@ router.get('/actual-vs-goal', async (req, res, next) => {
   try {
     const days = daysQuerySchema.parse(req.query.days ?? 7);
     const fromDate = daysAgo(days);
-    const target = Number(req.user.calorieTarget) || 2000;
+    const ct = await getComputedCalorieTarget(req.user);
+    const target = ct?.calorieTarget ?? 2000;
     const intakeData = await getDailyIntakeData(req.userId, fromDate);
 
     res.json(intakeData.map(i => ({
@@ -286,7 +290,7 @@ router.get('/bmr', async (req, res, next) => {
       bmr: Math.round(bmr),
       activityLevel,
       estimatedTdee,
-      calorieTarget: user.calorieTarget ? Number(user.calorieTarget) : estimatedTdee,
+      calorieTarget: (await getComputedCalorieTarget(user))?.calorieTarget ?? estimatedTdee,
     });
   } catch (err) {
     next(err);

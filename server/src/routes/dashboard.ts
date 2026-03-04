@@ -4,6 +4,7 @@ import { db } from '../db/connection.js';
 import { foodLog, foods, weightLog, tdeeHistory, dailyIntake } from '../db/schema.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { calculateTdeeHistory } from '../services/tdee.js';
+import { getComputedCalorieTarget } from '../services/calorieTarget.js';
 
 const router = Router();
 
@@ -137,12 +138,15 @@ router.get('/', async (req, res, next) => {
       }));
     }
 
+    const computedCalorieTarget = await getComputedCalorieTarget(user);
+
     res.json({
       log: logEntries,
       user,
       todayWeight,
       tdee: tdeeData,
       intake: intakeData,
+      computedCalorieTarget,
     });
   } catch (err) {
     next(err);

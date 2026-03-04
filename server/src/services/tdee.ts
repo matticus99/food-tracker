@@ -129,3 +129,42 @@ export function smoothWeightTrend(
 
   return results;
 }
+
+/**
+ * Compute calorie target from TDEE + objective + pace.
+ * goalPace is the daily calorie adjustment (e.g. 500 = ~1 lb/wk).
+ */
+export interface CalorieTargetResult {
+  calorieTarget: number;
+  tdeeUsed: number;
+  tdeeSource: 'adaptive' | 'estimated';
+  objectiveOffset: number;
+  objective: string;
+  goalPace: number;
+}
+
+export function computeCalorieTarget(params: {
+  latestAdaptiveTdee: number | null;
+  estimatedTdee: number | null;
+  objective: 'cut' | 'maintain' | 'bulk';
+  goalPace: number;
+}): CalorieTargetResult | null {
+  const { latestAdaptiveTdee, estimatedTdee, objective, goalPace } = params;
+
+  const tdeeUsed = latestAdaptiveTdee ?? estimatedTdee;
+  if (tdeeUsed == null) return null;
+
+  const tdeeSource: 'adaptive' | 'estimated' = latestAdaptiveTdee != null ? 'adaptive' : 'estimated';
+  let objectiveOffset = 0;
+  if (objective === 'cut') objectiveOffset = -goalPace;
+  else if (objective === 'bulk') objectiveOffset = goalPace;
+
+  return {
+    calorieTarget: Math.max(1200, Math.round(tdeeUsed + objectiveOffset)),
+    tdeeUsed: Math.round(tdeeUsed),
+    tdeeSource,
+    objectiveOffset,
+    objective,
+    goalPace,
+  };
+}

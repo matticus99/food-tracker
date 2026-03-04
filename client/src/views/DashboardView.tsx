@@ -44,6 +44,15 @@ interface IntakePoint {
   carbs: number;
 }
 
+interface CalorieTargetInfo {
+  calorieTarget: number;
+  tdeeUsed: number;
+  tdeeSource: 'adaptive' | 'estimated';
+  objectiveOffset: number;
+  objective: string;
+  goalPace: number;
+}
+
 interface User {
   calorieTarget: number;
   proteinTarget: number;
@@ -58,6 +67,7 @@ interface DashboardData {
   todayWeight: WeightEntry[];
   tdee: TdeePoint[];
   intake: IntakePoint[];
+  computedCalorieTarget: CalorieTargetInfo | null;
 }
 
 export default function DashboardView() {
@@ -152,14 +162,14 @@ export default function DashboardView() {
         ) : (
           <>
             <div className={`${styles.ringSection} ${viewStyles.staggerIn}`}>
-              <CalorieRing consumed={totals.calories} target={user?.calorieTarget ?? 2200} />
+              <CalorieRing consumed={totals.calories} target={data?.computedCalorieTarget?.calorieTarget ?? user?.calorieTarget ?? 2200} />
               <div className={styles.calorieStats}>
                 <div className={styles.calStat}>
                   <span className={styles.calVal}>{Math.round(totals.calories)}</span>
                   <span className={styles.calLabel}>consumed</span>
                 </div>
                 <div className={styles.calStat}>
-                  <span className={styles.calVal}>{user?.calorieTarget ?? 2200}</span>
+                  <span className={styles.calVal}>{data?.computedCalorieTarget?.calorieTarget ?? user?.calorieTarget ?? 2200}</span>
                   <span className={styles.calLabel}>target</span>
                 </div>
               </div>
