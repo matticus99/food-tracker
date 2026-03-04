@@ -54,10 +54,10 @@ export default function SettingsView() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const save = useCallback(async () => {
+  const save = useCallback(async (overrides?: Partial<User>) => {
     setSaving(true);
     try {
-      await apiFetch('/user', { method: 'PUT', body: JSON.stringify(form) });
+      await apiFetch('/user', { method: 'PUT', body: JSON.stringify({ ...form, ...overrides }) });
       refetch();
       toast('Settings saved', 'success');
     } catch {
@@ -96,7 +96,7 @@ export default function SettingsView() {
                 <SettingsField label="Sex">
                   <select
                     value={form.sex ?? 'male'}
-                    onChange={(e) => { updateField('sex', e.target.value); setTimeout(save, 0); }}
+                    onChange={(e) => { updateField('sex', e.target.value); save({ sex: e.target.value }); }}
                   >
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -126,7 +126,7 @@ export default function SettingsView() {
                 <SettingsField label="Objective">
                   <select
                     value={form.objective ?? 'maintain'}
-                    onChange={(e) => { updateField('objective', e.target.value); setTimeout(save, 0); }}
+                    onChange={(e) => { updateField('objective', e.target.value); save({ objective: e.target.value }); }}
                   >
                     <option value="cut">Cut</option>
                     <option value="maintain">Maintain</option>
@@ -177,10 +177,10 @@ export default function SettingsView() {
               <SettingsGroup title="Adaptive TDEE">
                 <SettingsField label="Activity Level">
                   <select
-                    value={form.activityLevel ?? '1.25'}
-                    onChange={(e) => { updateField('activityLevel', e.target.value); setTimeout(save, 0); }}
+                    value={String(parseFloat(form.activityLevel || '1.25'))}
+                    onChange={(e) => { updateField('activityLevel', e.target.value); save({ activityLevel: e.target.value }); }}
                   >
-                    <option value="1.0">Sedentary (1.0)</option>
+                    <option value="1">Sedentary (1.0)</option>
                     <option value="1.15">Light (1.15)</option>
                     <option value="1.25">Moderate (1.25)</option>
                     <option value="1.4">Active (1.4)</option>
