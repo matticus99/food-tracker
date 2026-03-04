@@ -2,6 +2,7 @@ import styles from './CategoryTabs.module.css';
 
 const CATEGORIES = [
   { value: '', label: 'All' },
+  { value: 'favorites', label: 'Favorites' },
   { value: 'proteins', label: 'Proteins' },
   { value: 'grains', label: 'Grains' },
   { value: 'vegetables', label: 'Vegetables' },
@@ -9,7 +10,6 @@ const CATEGORIES = [
   { value: 'dairy', label: 'Dairy' },
   { value: 'snacks', label: 'Snacks' },
   { value: 'drinks', label: 'Drinks' },
-  { value: 'other', label: 'Other' },
 ];
 
 interface Props {

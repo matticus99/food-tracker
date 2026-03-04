@@ -15,7 +15,7 @@ import {
 export const sexEnum = pgEnum('sex', ['male', 'female']);
 export const objectiveEnum = pgEnum('objective', ['cut', 'maintain', 'bulk']);
 export const foodCategoryEnum = pgEnum('food_category', [
-  'proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks', 'other',
+  'favorites', 'proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks',
 ]);
 export const foodSourceEnum = pgEnum('food_source', [
   'manual', 'imported_favorite', 'imported_history',
@@ -46,7 +46,7 @@ export const foods = pgTable('foods', {
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   emoji: varchar('emoji', { length: 10 }),
-  category: foodCategoryEnum('category').default('other').notNull(),
+  category: foodCategoryEnum('category').default('favorites').notNull(),
   servingLabel: varchar('serving_label', { length: 100 }),
   servingGrams: decimal('serving_grams', { precision: 7, scale: 1 }),
   calories: decimal('calories', { precision: 7, scale: 1 }),

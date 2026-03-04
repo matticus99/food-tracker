@@ -5,7 +5,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 100;
+  z-index: 200;
   padding: var(--space-md);
   padding-bottom: calc(var(--bottomnav-height) + env(safe-area-inset-bottom, 0px) + var(--space-md));
 }
@@ -13,6 +13,7 @@
 @media (min-width: 768px) {
   .overlay {
     align-items: center;
+    padding-bottom: var(--space-md);
   }
 }
 
@@ -21,8 +22,8 @@
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   width: 100%;
   max-width: 480px;
-  max-height: 85vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   animation: slideUp 0.3s var(--ease-out);
 }
 
@@ -67,180 +68,143 @@
   background: var(--bg-hover);
 }
 
-.form {
+.body {
   padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.selectedFood {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.foodEmoji {
+  font-size: 1.25rem;
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.foodName {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.amountSection {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
 }
 
-.emojiRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
-}
-
-.emojiBtn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  background: none;
-  font-size: 1.1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-fast);
-}
-
-.emojiBtn:hover {
-  background: var(--bg-hover);
-}
-
-.emojiActive {
-  border-color: var(--accent-indigo);
-  background: rgba(99, 102, 241, 0.1);
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  min-width: 0;
-}
-
-.label {
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-}
-
-.input {
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  background: var(--bg-input);
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 0.85rem;
+.amountInput {
   width: 100%;
-  box-sizing: border-box;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--accent-indigo);
-}
-
-.inputReadonly {
-  opacity: 0.55;
-  cursor: not-allowed;
-  border-style: dashed;
-}
-
-.inputReadonly:focus {
-  border-color: var(--border-default);
-}
-
-.hint {
-  font-family: var(--font-body);
-  font-size: 0.65rem;
-  color: var(--text-tertiary);
-  font-style: italic;
-}
-
-/* ── Serving size input + unit chips ── */
-
-.servingInputRow {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-sm);
-}
-
-.servingInput {
-  flex: 1;
   padding: var(--space-sm) var(--space-md);
-  border: 2px solid var(--border-default);
   border-radius: var(--radius-md);
+  border: 2px solid var(--border-default);
   background: var(--bg-input);
   color: var(--text-primary);
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.5rem;
   font-weight: 600;
   text-align: center;
   transition: border-color var(--transition-fast);
   -moz-appearance: textfield;
 }
 
-.servingInput::-webkit-inner-spin-button,
-.servingInput::-webkit-outer-spin-button {
+.amountInput::-webkit-inner-spin-button,
+.amountInput::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.servingInput:focus {
+.amountInput:focus {
   outline: none;
   border-color: var(--accent-indigo);
 }
 
-.servingUnitLabel {
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  color: var(--text-tertiary);
-  min-width: 48px;
-}
+/* ── Bottom unit selector bar ── */
 
-.unitChips {
+.unitBar {
   display: flex;
-  gap: var(--space-xs);
-  margin-top: var(--space-xs);
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--border-subtle);
 }
 
-.unitChip {
-  padding: var(--space-xs) var(--space-md);
-  border: 1px solid var(--border-default);
+.unitBarBtn {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
   border-radius: 999px;
-  background: none;
+  background: var(--bg-hover);
   color: var(--text-secondary);
   font-family: var(--font-body);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.unitChip:hover {
-  background: var(--bg-hover);
+.unitBarBtn:hover {
+  background: var(--bg-tertiary, var(--bg-hover));
 }
 
-.unitChipActive {
-  background: var(--accent-indigo);
-  color: white;
-  border-color: var(--accent-indigo);
+.unitBarBtnActive {
+  background: var(--text-primary);
+  color: var(--bg-surface);
 }
 
-.unitChipActive:hover {
-  background: var(--accent-indigo);
+.unitBarBtnActive:hover {
+  background: var(--text-primary);
   opacity: 0.9;
 }
 
-/* ── Layout ── */
+.servingNote {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-align: center;
+}
 
-.row {
+.macroPreview {
   display: flex;
   gap: var(--space-md);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  justify-content: center;
 }
 
-.macroGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-md);
+.actions {
+  display: flex;
+  gap: var(--space-sm);
 }
 
-.submitBtn {
+.cancelBtn {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-default);
+  background: none;
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  background: var(--bg-hover);
+}
+
+.saveBtn {
+  flex: 1;
   padding: var(--space-sm) var(--space-md);
   border: none;
   background: var(--accent-indigo);
@@ -251,14 +215,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: opacity var(--transition-fast);
-  margin-top: var(--space-sm);
 }
 
-.submitBtn:hover {
+.saveBtn:hover {
   opacity: 0.9;
 }
 
-.submitBtn:disabled {
+.saveBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

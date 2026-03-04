@@ -6,9 +6,11 @@ interface LogEntryData {
   timeHour: number;
   servings: string;
   food: {
+    id: string;
     name: string;
     emoji: string | null;
     servingLabel: string;
+    servingGrams: string | null;
     calories: string | null;
     protein: string | null;
     fat: string | null;
@@ -19,6 +21,7 @@ interface LogEntryData {
 interface Props {
   entries: LogEntryData[];
   onDelete: (id: string) => void;
+  onEdit: (id: string) => void;
   onAddAtHour: (hour: number) => void;
 }
 
@@ -31,7 +34,7 @@ function formatHour(h: number): string {
 
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5); // 5 AM to 10 PM
 
-export default function Timeline({ entries, onDelete, onAddAtHour }: Props) {
+export default function Timeline({ entries, onDelete, onEdit, onAddAtHour }: Props) {
   const byHour = new Map<number, LogEntryData[]>();
   for (const entry of entries) {
     const list = byHour.get(entry.timeHour) ?? [];
@@ -56,18 +59,23 @@ export default function Timeline({ entries, onDelete, onAddAtHour }: Props) {
               {formatHour(hour)}
             </span>
             <div className={styles.content}>
-              {hourEntries.map((entry) => (
-                <FoodEntry
-                  key={entry.id}
-                  id={entry.id}
-                  emoji={entry.food.emoji}
-                  name={entry.food.name}
-                  servingLabel={entry.food.servingLabel}
-                  servings={Number(entry.servings) || 1}
-                  calories={(Number(entry.food.calories) || 0) * (Number(entry.servings) || 1)}
-                  onDelete={onDelete}
-                />
-              ))}
+              {hourEntries.map((entry) => {
+                const servings = Number(entry.servings) || 1;
+                return (
+                  <FoodEntry
+                    key={entry.id}
+                    id={entry.id}
+                    emoji={entry.food.emoji}
+                    name={entry.food.name}
+                    servingLabel={entry.food.servingLabel}
+                    servingGrams={Number(entry.food.servingGrams) || null}
+                    servings={servings}
+                    calories={(Number(entry.food.calories) || 0) * servings}
+                    onDelete={onDelete}
+                    onEdit={onEdit}
+                  />
+                );
+              })}
               <button
                 className={styles.addBtn}
                 onClick={() => onAddAtHour(hour)}

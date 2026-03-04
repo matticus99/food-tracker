@@ -27,7 +27,7 @@ interface Food {
 
 export default function FoodsView() {
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState('favorites');
   const [formOpen, setFormOpen] = useState(false);
   const [editFood, setEditFood] = useState<Food | null>(null);
   const { toast } = useToast();

@@ -8,10 +8,16 @@ interface Food {
   emoji: string | null;
   category: string;
   servingLabel: string;
+  servingGrams: string | null;
   calories: string | null;
   protein: string | null;
   fat: string | null;
   carbs: string | null;
+}
+
+interface SelectedFood {
+  food: Food;
+  servings: number;
 }
 
 interface Props {
@@ -24,35 +30,60 @@ interface Props {
 
 export default function AddFoodModal({ open, hour, date, onClose, onAdded }: Props) {
   const [search, setSearch] = useState('');
-  const [servings, setServings] = useState('1');
-  const [selectedFood, setSelectedFood] = useState<Food | null>(null);
+  const [filter, setFilter] = useState<'favorites' | 'all'>('favorites');
+  const [selections, setSelections] = useState<Map<string, SelectedFood>>(new Map());
   const [submitting, setSubmitting] = useState(false);
 
-  const query = search ? `?search=${encodeURIComponent(search)}` : '';
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (filter === 'favorites') params.set('category', 'favorites');
+  const query = params.toString() ? `?${params}` : '';
   const { data: foods } = useApi<Food[]>(open ? `/foods${query}` : null);
 
   useEffect(() => {
     if (open) {
       setSearch('');
-      setServings('1');
-      setSelectedFood(null);
+      setFilter('favorites');
+      setSelections(new Map());
     }
   }, [open]);
 
-  if (!open) return null;
+  function toggleFood(food: Food) {
+    setSelections(prev => {
+      const next = new Map(prev);
+      if (next.has(food.id)) {
+        next.delete(food.id);
+      } else {
+        next.set(food.id, { food, servings: 1 });
+      }
+      return next;
+    });
+  }
 
-  async function handleAdd() {
-    if (!selectedFood) return;
+  function updateServings(foodId: string, delta: number) {
+    setSelections(prev => {
+      const next = new Map(prev);
+      const item = next.get(foodId);
+      if (!item) return prev;
+      const newServings = Math.max(0.5, item.servings + delta);
+      next.set(foodId, { ...item, servings: newServings });
+      return next;
+    });
+  }
+
+  async function handleSave() {
+    if (selections.size === 0) return;
     setSubmitting(true);
     try {
-      await apiFetch('/log', {
+      const entries = Array.from(selections.values()).map(({ food, servings }) => ({
+        foodId: food.id,
+        date,
+        timeHour: hour,
+        servings,
+      }));
+      await apiFetch('/log/batch', {
         method: 'POST',
-        body: JSON.stringify({
-          foodId: selectedFood.id,
-          date,
-          timeHour: hour,
-          servings: Number(servings) || 1,
-        }),
+        body: JSON.stringify({ entries }),
       });
       onAdded();
       onClose();
@@ -68,6 +99,8 @@ export default function AddFoodModal({ open, hour, date, onClose, onAdded }: Pro
     return `${h - 12} PM`;
   };
 
+  if (!open) return null;
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -76,80 +109,77 @@ export default function AddFoodModal({ open, hour, date, onClose, onAdded }: Pro
           <button className={styles.closeBtn} onClick={onClose}>×</button>
         </div>
 
-        {!selectedFood ? (
-          <>
-            <input
-              className={styles.search}
-              type="text"
-              placeholder="Search foods..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              autoFocus
-            />
-            <div className={styles.list}>
-              {foods?.map((food) => (
-                <button
-                  key={food.id}
-                  className={styles.foodItem}
-                  onClick={() => setSelectedFood(food)}
-                >
-                  <span className={styles.foodEmoji}>{food.emoji || '🍽️'}</span>
-                  <div className={styles.foodInfo}>
-                    <span className={styles.foodName}>{food.name}</span>
-                    <span className={styles.foodMeta}>
-                      {food.servingLabel}
-                      {food.calories ? ` · ${Number(food.calories)} cal` : ''}
-                    </span>
-                  </div>
-                </button>
-              ))}
-              {foods?.length === 0 && (
-                <p className={styles.empty}>No foods found</p>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className={styles.confirm}>
-            <div className={styles.selectedFood}>
-              <span className={styles.foodEmoji}>{selectedFood.emoji || '🍽️'}</span>
-              <span className={styles.foodName}>{selectedFood.name}</span>
-            </div>
-            <div className={styles.servingRow}>
-              <label className={styles.servingLabel}>Servings</label>
-              <input
-                className={styles.servingInput}
-                type="number"
-                min="0.25"
-                step="0.25"
-                value={servings}
-                onChange={(e) => setServings(e.target.value)}
-              />
-              <span className={styles.servingUnit}>{selectedFood.servingLabel}</span>
-            </div>
-            {selectedFood.calories && (
-              <div className={styles.macroPreview}>
-                <span>{Math.round(Number(selectedFood.calories) * (Number(servings) || 1))} cal</span>
-                <span style={{ color: 'var(--accent-cyan)' }}>
-                  {Math.round((Number(selectedFood.protein) || 0) * (Number(servings) || 1))}g P
-                </span>
-                <span style={{ color: 'var(--accent-orange)' }}>
-                  {Math.round((Number(selectedFood.fat) || 0) * (Number(servings) || 1))}g F
-                </span>
-                <span style={{ color: 'var(--accent-emerald)' }}>
-                  {Math.round((Number(selectedFood.carbs) || 0) * (Number(servings) || 1))}g C
-                </span>
+        <div className={styles.filterTabs}>
+          <button
+            className={`${styles.filterTab} ${filter === 'favorites' ? styles.filterTabActive : ''}`}
+            onClick={() => setFilter('favorites')}
+          >
+            Favorites
+          </button>
+          <button
+            className={`${styles.filterTab} ${filter === 'all' ? styles.filterTabActive : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            All Foods
+          </button>
+        </div>
+
+        {selections.size > 0 && (
+          <div className={styles.selectionTray}>
+            {Array.from(selections.values()).map(({ food, servings }) => (
+              <div key={food.id} className={styles.chip}>
+                <span className={styles.chipEmoji}>{food.emoji || '🍽️'}</span>
+                <div className={styles.chipStepper}>
+                  <button className={styles.chipStepperBtn} onClick={() => updateServings(food.id, -0.5)}>−</button>
+                  <span className={styles.chipCount}>{servings}</span>
+                  <button className={styles.chipStepperBtn} onClick={() => updateServings(food.id, 0.5)}>+</button>
+                </div>
+                <button className={styles.chipRemove} onClick={() => toggleFood(food)}>×</button>
               </div>
-            )}
-            <div className={styles.actions}>
-              <button className={styles.backBtn} onClick={() => setSelectedFood(null)}>
-                Back
-              </button>
-              <button className={styles.addBtn} onClick={handleAdd} disabled={submitting}>
-                {submitting ? 'Adding...' : 'Add'}
-              </button>
-            </div>
+            ))}
           </div>
         )}
+
+        <div className={styles.list}>
+          {foods?.map((food) => {
+            const isSelected = selections.has(food.id);
+            return (
+              <button
+                key={food.id}
+                className={`${styles.foodItem} ${isSelected ? styles.foodItemSelected : ''}`}
+                onClick={() => toggleFood(food)}
+              >
+                <span className={styles.checkmark}>{isSelected ? '✓' : ''}</span>
+                <span className={styles.foodEmoji}>{food.emoji || '🍽️'}</span>
+                <div className={styles.foodInfo}>
+                  <span className={styles.foodName}>{food.name}</span>
+                  <span className={styles.foodMeta}>
+                    {food.servingLabel}
+                    {food.calories ? ` · ${Number(food.calories)} cal` : ''}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+          {foods?.length === 0 && (
+            <p className={styles.empty}>No foods found</p>
+          )}
+        </div>
+
+        <div className={styles.bottomBar}>
+          {selections.size > 0 && (
+            <button className={styles.saveBtn} onClick={handleSave} disabled={submitting}>
+              {submitting ? 'Saving...' : `Save ${selections.size} food${selections.size > 1 ? 's' : ''}`}
+            </button>
+          )}
+          <input
+            className={styles.search}
+            type="text"
+            placeholder="Search foods..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
     </div>
   );

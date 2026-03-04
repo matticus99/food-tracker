@@ -19,7 +19,7 @@ export const userUpdateSchema = z.object({
 export const foodCreateSchema = z.object({
   name: z.string().min(1, 'name is required').max(255),
   emoji: z.string().max(10).nullish(),
-  category: z.enum(['proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks', 'other']).default('other'),
+  category: z.enum(['favorites', 'proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks']).default('favorites'),
   servingLabel: z.string().max(100).nullish(),
   servingGrams: z.coerce.number().min(0).max(99999).nullish(),
   calories: z.coerce.number().min(0).max(99999).nullish(),

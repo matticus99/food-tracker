@@ -33,6 +33,12 @@
   border-radius: var(--radius-md);
   transition: background var(--transition-fast);
   z-index: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.entry:active {
+  background: var(--bg-hover);
 }
 
 .entry:hover {

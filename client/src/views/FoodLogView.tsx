@@ -4,6 +4,8 @@ import DayNavigator from '../components/dashboard/DayNavigator';
 import LogSummary from '../components/log/LogSummary';
 import Timeline from '../components/log/Timeline';
 import AddFoodModal from '../components/log/AddFoodModal';
+import EditFoodModal from '../components/log/EditFoodModal';
+import type { EditEntry } from '../components/log/EditFoodModal';
 import { Skeleton } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import { useToast } from '../components/ui/Toast';
@@ -17,9 +19,11 @@ interface LogEntry {
   timeHour: number;
   servings: string;
   food: {
+    id: string;
     name: string;
     emoji: string | null;
     servingLabel: string;
+    servingGrams: string | null;
     calories: string | null;
     protein: string | null;
     fat: string | null;
@@ -32,6 +36,7 @@ export default function FoodLogView() {
   const { data: entries, loading, refetch } = useApi<LogEntry[]>(`/log?date=${dateStr}`);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalHour, setModalHour] = useState(12);
+  const [editEntry, setEditEntry] = useState<EditEntry | null>(null);
   const { toast } = useToast();
 
   const dateLabel = date.toLocaleDateString('en-US', {
@@ -67,6 +72,24 @@ export default function FoodLogView() {
     },
     [refetch, toast],
   );
+
+  const handleEdit = useCallback(
+    (id: string) => {
+      const entry = entries?.find((e) => e.id === id);
+      if (!entry) return;
+      setEditEntry({
+        id: entry.id,
+        servings: Number(entry.servings) || 1,
+        food: entry.food,
+      });
+    },
+    [entries],
+  );
+
+  const handleEditSaved = useCallback(() => {
+    refetch();
+    toast('Entry updated', 'success');
+  }, [refetch, toast]);
 
   const openAddModal = useCallback((hour: number) => {
     setModalHour(hour);
@@ -113,6 +136,7 @@ export default function FoodLogView() {
           <Timeline
             entries={entries ?? []}
             onDelete={handleDelete}
+            onEdit={handleEdit}
             onAddAtHour={openAddModal}
           />
         )}
@@ -127,6 +151,11 @@ export default function FoodLogView() {
         date={dateStr}
         onClose={() => setModalOpen(false)}
         onAdded={handleAdded}
+      />
+      <EditFoodModal
+        entry={editEntry}
+        onClose={() => setEditEntry(null)}
+        onSaved={handleEditSaved}
       />
     </div>
   );

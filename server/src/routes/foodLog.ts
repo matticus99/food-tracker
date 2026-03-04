@@ -29,6 +29,7 @@ router.get('/', async (req, res, next) => {
           emoji: foods.emoji,
           category: foods.category,
           servingLabel: foods.servingLabel,
+          servingGrams: foods.servingGrams,
           calories: foods.calories,
           protein: foods.protein,
           fat: foods.fat,
@@ -57,6 +58,26 @@ router.post('/', async (req, res, next) => {
       .returning();
 
     res.status(201).json(entry);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/log/batch
+router.post('/batch', async (req, res, next) => {
+  try {
+    const { entries } = req.body;
+    if (!Array.isArray(entries) || entries.length === 0 || entries.length > 50) {
+      throw new AppError(400, 'entries must be an array of 1-50 items');
+    }
+
+    const values = entries.map((e: unknown) => {
+      const { foodId, date, timeHour, servings } = validate(foodLogCreateSchema, e);
+      return { userId: req.userId, foodId, date, timeHour, servings: String(servings) };
+    });
+
+    const inserted = await db.insert(foodLog).values(values).returning();
+    res.status(201).json(inserted);
   } catch (err) {
     next(err);
   }

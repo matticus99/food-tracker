@@ -155,7 +155,7 @@ describe('FoodDbList', () => {
       id: 'f1',
       name: 'Food',
       emoji: null,
-      category: 'other',
+      category: 'favorites',
       servingLabel: '100g',
       servingGrams: null,
       calories: '200.7',

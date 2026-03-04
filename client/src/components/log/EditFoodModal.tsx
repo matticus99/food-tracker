@@ -1,0 +1,193 @@
+import { useState, useEffect, useMemo } from 'react';
+import { apiFetch } from '../../hooks/useApi';
+import styles from './EditFoodModal.module.css';
+
+type Unit = 'g' | 'serving' | 'oz' | 'lb';
+
+const OZ_TO_G = 28.3495;
+const LB_TO_G = 453.592;
+
+export interface EditEntry {
+  id: string;
+  servings: number;
+  food: {
+    name: string;
+    emoji: string | null;
+    servingLabel: string;
+    servingGrams: string | null;
+    calories: string | null;
+    protein: string | null;
+    fat: string | null;
+    carbs: string | null;
+  };
+}
+
+interface Props {
+  entry: EditEntry | null;
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function convertAmount(value: number, fromUnit: Unit, toUnit: Unit, servingGrams: number): number {
+  if (fromUnit === toUnit) return value;
+  let grams: number;
+  switch (fromUnit) {
+    case 'g': grams = value; break;
+    case 'oz': grams = value * OZ_TO_G; break;
+    case 'lb': grams = value * LB_TO_G; break;
+    case 'serving': grams = value * servingGrams; break;
+  }
+  switch (toUnit) {
+    case 'g': return grams;
+    case 'oz': return grams / OZ_TO_G;
+    case 'lb': return grams / LB_TO_G;
+    case 'serving': return servingGrams > 0 ? grams / servingGrams : value;
+  }
+}
+
+function toServings(value: number, unit: Unit, servingGrams: number): number {
+  return convertAmount(value, unit, 'serving', servingGrams);
+}
+
+function formatAmount(value: number): string {
+  if (value === 0) return '0';
+  if (Number.isInteger(value)) return String(value);
+  return parseFloat(value.toFixed(2)).toString();
+}
+
+export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
+  const [amount, setAmount] = useState('');
+  const [unit, setUnit] = useState<Unit>('g');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (entry) {
+      const sg = Number(entry.food.servingGrams) || 0;
+      if (sg > 0) {
+        setUnit('g');
+        setAmount(formatAmount(entry.servings * sg));
+      } else {
+        setUnit('serving');
+        setAmount(formatAmount(entry.servings));
+      }
+    }
+  }, [entry]);
+
+  const sg = entry ? (Number(entry.food.servingGrams) || 0) : 0;
+
+  const servingsMultiplier = useMemo(() => {
+    const val = Number(amount) || 0;
+    if (unit === 'serving') return val || 1;
+    if (sg <= 0) return 1;
+    return toServings(val, unit, sg);
+  }, [amount, unit, sg]);
+
+  const macros = useMemo(() => {
+    if (!entry) return { calories: 0, protein: 0, fat: 0, carbs: 0 };
+    return {
+      calories: Math.round((Number(entry.food.calories) || 0) * servingsMultiplier),
+      protein: Math.round((Number(entry.food.protein) || 0) * servingsMultiplier),
+      fat: Math.round((Number(entry.food.fat) || 0) * servingsMultiplier),
+      carbs: Math.round((Number(entry.food.carbs) || 0) * servingsMultiplier),
+    };
+  }, [entry, servingsMultiplier]);
+
+  if (!entry) return null;
+
+  const hasServingGrams = sg > 0;
+  const units: Unit[] = hasServingGrams ? ['g', 'serving', 'oz', 'lb'] : ['serving'];
+
+  function handleUnitChange(newUnit: Unit) {
+    if (newUnit === unit) return;
+    const currentVal = Number(amount) || 0;
+    if (sg > 0 && currentVal > 0) {
+      const converted = convertAmount(currentVal, unit, newUnit, sg);
+      setAmount(formatAmount(converted));
+    } else if (newUnit === 'serving') {
+      setAmount('1');
+    } else {
+      setAmount('');
+    }
+    setUnit(newUnit);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await apiFetch(`/log/${entry.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ servings: Math.max(servingsMultiplier, 0.01) }),
+      });
+      onSaved();
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.header}>
+          <h3 className={styles.title}>Edit Entry</h3>
+          <button className={styles.closeBtn} onClick={onClose}>×</button>
+        </div>
+
+        <div className={styles.body}>
+          <div className={styles.selectedFood}>
+            <span className={styles.foodEmoji}>{entry.food.emoji || '🍽️'}</span>
+            <span className={styles.foodName}>{entry.food.name}</span>
+          </div>
+
+          <div className={styles.amountSection}>
+            <input
+              className={styles.amountInput}
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="any"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              autoFocus
+            />
+            <div className={styles.servingNote}>
+              {entry.food.servingLabel}
+              {hasServingGrams && unit !== 'serving' && (
+                <> · {formatAmount(servingsMultiplier)} serving{servingsMultiplier !== 1 ? 's' : ''}</>
+              )}
+            </div>
+          </div>
+
+          {entry.food.calories && (
+            <div className={styles.macroPreview}>
+              <span>{macros.calories} cal</span>
+              <span style={{ color: 'var(--accent-cyan)' }}>{macros.protein}g P</span>
+              <span style={{ color: 'var(--accent-orange)' }}>{macros.fat}g F</span>
+              <span style={{ color: 'var(--accent-emerald)' }}>{macros.carbs}g C</span>
+            </div>
+          )}
+
+          <div className={styles.actions}>
+            <button className={styles.cancelBtn} onClick={onClose}>Cancel</button>
+            <button className={styles.saveBtn} onClick={handleSave} disabled={saving || !Number(amount)}>
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+
+        </div>
+
+        <div className={styles.unitBar}>
+          {units.map((u) => (
+            <button
+              key={u}
+              className={`${styles.unitBarBtn} ${unit === u ? styles.unitBarBtnActive : ''}`}
+              onClick={() => handleUnitChange(u)}
+            >
+              {u}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -47,9 +47,9 @@ const defaultFoods: Array<{
   { name: 'Black Coffee', emoji: '☕', category: 'drinks', servingLabel: 'per cup (237ml)', servingGrams: '237', calories: '2', protein: '0.3', fat: '0', carbs: '0' },
   { name: 'Orange Juice', emoji: '🍊', category: 'drinks', servingLabel: 'per cup (248ml)', servingGrams: '248', calories: '112', protein: '1.7', fat: '0.5', carbs: '26' },
 
-  // Other
-  { name: 'Olive Oil', emoji: '🫒', category: 'other', servingLabel: 'per tbsp (14g)', servingGrams: '14', calories: '119', protein: '0', fat: '13.5', carbs: '0' },
-  { name: 'Honey', emoji: '🍯', category: 'other', servingLabel: 'per tbsp (21g)', servingGrams: '21', calories: '64', protein: '0.1', fat: '0', carbs: '17' },
+  // Favorites
+  { name: 'Olive Oil', emoji: '🫒', category: 'favorites', servingLabel: 'per tbsp (14g)', servingGrams: '14', calories: '119', protein: '0', fat: '13.5', carbs: '0' },
+  { name: 'Honey', emoji: '🍯', category: 'favorites', servingLabel: 'per tbsp (21g)', servingGrams: '21', calories: '64', protein: '0.1', fat: '0', carbs: '17' },
 ];
 
 async function seed() {
