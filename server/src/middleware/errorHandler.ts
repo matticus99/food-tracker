@@ -32,10 +32,10 @@ export function errorHandler(
 ) {
   if (err instanceof AppError) {
     console.error('[AppError]', err.statusCode, err.message);
-    res.status(err.statusCode).json({ error: err.message });
+    res.status(err.statusCode).json({ error: err.message, message: err.message });
     return;
   }
 
   console.error('[Error]', err);
-  res.status(500).json({ error: 'Internal server error' });
+  res.status(500).json({ error: 'Internal server error', message: 'Internal server error' });
 }
