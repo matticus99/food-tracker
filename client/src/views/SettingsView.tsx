@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import PageHeader from '../components/layout/PageHeader';
 import SettingsGroup from '../components/settings/SettingsGroup';
 import SettingsField from '../components/settings/SettingsField';
@@ -35,47 +35,105 @@ interface User {
   computedCalorieTarget: ComputedCalorieTarget | null;
 }
 
+type FormData = Omit<User, 'id' | 'computedCalorieTarget'>;
+
+function pickFormData(user: User): FormData {
+  return {
+    age: user.age,
+    sex: user.sex,
+    heightInches: user.heightInches,
+    currentWeight: user.currentWeight,
+    objective: user.objective,
+    activityLevel: user.activityLevel,
+    goalPace: user.goalPace,
+    proteinTarget: user.proteinTarget,
+    fatTarget: user.fatTarget,
+    carbTarget: user.carbTarget,
+    tdeeSmoothingFactor: user.tdeeSmoothingFactor,
+  };
+}
+
 export default function SettingsView() {
   const { theme, setTheme } = useTheme();
   const { data: user, loading, refetch } = useApi<User>('/user');
-  const [form, setForm] = useState<Partial<User>>({});
+  const [form, setForm] = useState<Partial<FormData>>({});
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
+  // Refs to avoid stale closures and enable save-on-unmount
+  const formRef = useRef<Partial<FormData>>({});
+  const dirtyRef = useRef(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const savingRef = useRef(false);
+
+  // Sync form from server data (skip if user has unsaved edits)
   useEffect(() => {
-    if (user) {
-      setForm({
-        age: user.age,
-        sex: user.sex,
-        heightInches: user.heightInches,
-        currentWeight: user.currentWeight,
-        objective: user.objective,
-        activityLevel: user.activityLevel,
-        goalPace: user.goalPace,
-        proteinTarget: user.proteinTarget,
-        fatTarget: user.fatTarget,
-        carbTarget: user.carbTarget,
-        tdeeSmoothingFactor: user.tdeeSmoothingFactor,
-      });
+    if (user && !dirtyRef.current) {
+      const data = pickFormData(user);
+      setForm(data);
+      formRef.current = data;
     }
   }, [user]);
 
-  const updateField = useCallback((field: string, value: string | number) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  // Update a single field — ref is set synchronously so save always sees latest
+  const updateField = useCallback((field: string, value: string | number | null) => {
+    const next = { ...formRef.current, [field]: value };
+    formRef.current = next;
+    setForm(next);
+    dirtyRef.current = true;
   }, []);
 
-  const save = useCallback(async (overrides?: Partial<User>) => {
+  // Persist to server, reading from ref for always-fresh data
+  const doSave = useCallback(async () => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    if (!dirtyRef.current || savingRef.current) return;
+
+    savingRef.current = true;
     setSaving(true);
     try {
-      await apiFetch('/user', { method: 'PUT', body: JSON.stringify({ ...form, ...overrides }) });
+      await apiFetch('/user', {
+        method: 'PUT',
+        body: JSON.stringify(formRef.current),
+      });
+      dirtyRef.current = false;
       refetch();
       toast('Settings saved', 'success');
-    } catch {
-      toast('Failed to save', 'error');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to save', 'error');
     } finally {
+      savingRef.current = false;
       setSaving(false);
+      // If more edits happened during save, schedule another
+      if (dirtyRef.current) {
+        saveTimerRef.current = setTimeout(() => doSave(), 300);
+      }
     }
-  }, [form, refetch, toast]);
+  }, [refetch, toast]);
+
+  // Debounced save — cancels any pending timer
+  const scheduleSave = useCallback((delayMs = 500) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    if (delayMs === 0) {
+      doSave();
+    } else {
+      saveTimerRef.current = setTimeout(doSave, delayMs);
+    }
+  }, [doSave]);
+
+  // Save pending changes on unmount (navigating away)
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (dirtyRef.current) {
+        fetch('/api/user', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formRef.current),
+          keepalive: true,
+        });
+      }
+    };
+  }, []);
 
   const smoothVal = Number(form.tdeeSmoothingFactor || 0.1);
 
@@ -99,14 +157,20 @@ export default function SettingsView() {
                   <input
                     type="number"
                     value={form.age ?? ''}
-                    onChange={(e) => updateField('age', parseInt(e.target.value) || 0)}
-                    onBlur={() => save()}
+                    onChange={(e) => {
+                      const parsed = parseInt(e.target.value);
+                      updateField('age', isNaN(parsed) ? null : parsed);
+                    }}
+                    onBlur={() => scheduleSave()}
                   />
                 </SettingsField>
                 <SettingsField label="Sex">
                   <select
                     value={form.sex ?? 'male'}
-                    onChange={(e) => { updateField('sex', e.target.value); save({ sex: e.target.value }); }}
+                    onChange={(e) => {
+                      updateField('sex', e.target.value);
+                      scheduleSave(0);
+                    }}
                   >
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -116,16 +180,16 @@ export default function SettingsView() {
                   <input
                     type="number"
                     value={form.heightInches ?? ''}
-                    onChange={(e) => updateField('heightInches', e.target.value)}
-                    onBlur={() => save()}
+                    onChange={(e) => updateField('heightInches', e.target.value || null)}
+                    onBlur={() => scheduleSave()}
                   />
                 </SettingsField>
                 <SettingsField label="Weight" suffix="lbs">
                   <input
                     type="number"
                     value={form.currentWeight ?? ''}
-                    onChange={(e) => updateField('currentWeight', e.target.value)}
-                    onBlur={() => save()}
+                    onChange={(e) => updateField('currentWeight', e.target.value || null)}
+                    onBlur={() => scheduleSave()}
                   />
                 </SettingsField>
               </SettingsGroup>
@@ -136,7 +200,10 @@ export default function SettingsView() {
                 <SettingsField label="Objective">
                   <select
                     value={form.objective ?? 'maintain'}
-                    onChange={(e) => { updateField('objective', e.target.value); save({ objective: e.target.value }); }}
+                    onChange={(e) => {
+                      updateField('objective', e.target.value);
+                      scheduleSave(0);
+                    }}
                   >
                     <option value="cut">Cut</option>
                     <option value="maintain">Maintain</option>
@@ -149,7 +216,7 @@ export default function SettingsView() {
                     onChange={(e) => {
                       const pace = Math.round(Number(e.target.value) * 500);
                       updateField('goalPace', pace);
-                      save({ goalPace: pace } as Partial<User>);
+                      scheduleSave(0);
                     }}
                   >
                     <option value="0.5">0.5 lb / week</option>
@@ -183,24 +250,33 @@ export default function SettingsView() {
                   <input
                     type="number"
                     value={form.proteinTarget ?? ''}
-                    onChange={(e) => updateField('proteinTarget', parseInt(e.target.value) || 0)}
-                    onBlur={() => save()}
+                    onChange={(e) => {
+                      const parsed = parseInt(e.target.value);
+                      updateField('proteinTarget', isNaN(parsed) ? null : parsed);
+                    }}
+                    onBlur={() => scheduleSave()}
                   />
                 </SettingsField>
                 <SettingsField label="Fat" suffix="g">
                   <input
                     type="number"
                     value={form.fatTarget ?? ''}
-                    onChange={(e) => updateField('fatTarget', parseInt(e.target.value) || 0)}
-                    onBlur={() => save()}
+                    onChange={(e) => {
+                      const parsed = parseInt(e.target.value);
+                      updateField('fatTarget', isNaN(parsed) ? null : parsed);
+                    }}
+                    onBlur={() => scheduleSave()}
                   />
                 </SettingsField>
                 <SettingsField label="Carbs" suffix="g">
                   <input
                     type="number"
                     value={form.carbTarget ?? ''}
-                    onChange={(e) => updateField('carbTarget', parseInt(e.target.value) || 0)}
-                    onBlur={() => save()}
+                    onChange={(e) => {
+                      const parsed = parseInt(e.target.value);
+                      updateField('carbTarget', isNaN(parsed) ? null : parsed);
+                    }}
+                    onBlur={() => scheduleSave()}
                   />
                 </SettingsField>
               </SettingsGroup>
@@ -211,7 +287,10 @@ export default function SettingsView() {
                 <SettingsField label="Activity Level">
                   <select
                     value={String(parseFloat(form.activityLevel || '1.25'))}
-                    onChange={(e) => { updateField('activityLevel', e.target.value); save({ activityLevel: e.target.value }); }}
+                    onChange={(e) => {
+                      updateField('activityLevel', e.target.value);
+                      scheduleSave(0);
+                    }}
                   >
                     <option value="1">Sedentary (1.0)</option>
                     <option value="1.15">Light (1.15)</option>
@@ -228,8 +307,8 @@ export default function SettingsView() {
                     step="0.01"
                     value={smoothVal}
                     onChange={(e) => updateField('tdeeSmoothingFactor', e.target.value)}
-                    onMouseUp={() => save()}
-                    onTouchEnd={() => save()}
+                    onMouseUp={() => scheduleSave(0)}
+                    onTouchEnd={() => scheduleSave(0)}
                   />
                 </SettingsField>
               </SettingsGroup>
