@@ -74,6 +74,7 @@ export default function FoodForm({ open, food, onClose, onSaved }: Props) {
   const [fat, setFat] = useState('');
   const [carbs, setCarbs] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Per-gram nutritional ratios (locked once food exists)
   const ratios = useRef({ calPerGram: 0, proPerGram: 0, fatPerGram: 0, carbPerGram: 0 });
@@ -91,6 +92,7 @@ export default function FoodForm({ open, food, onClose, onSaved }: Props) {
 
   useEffect(() => {
     if (open) {
+      setError(null);
       if (food) {
         const sg = Number(food.servingGrams) || 0;
         setName(food.name);
@@ -241,6 +243,7 @@ export default function FoodForm({ open, food, onClose, onSaved }: Props) {
     e.preventDefault();
     if (!name.trim()) return;
     setSubmitting(true);
+    setError(null);
     try {
       const sg = getServingGramsForSubmit();
       const body = {
@@ -261,6 +264,8 @@ export default function FoodForm({ open, food, onClose, onSaved }: Props) {
       }
       onSaved();
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setSubmitting(false);
     }
@@ -406,6 +411,7 @@ export default function FoodForm({ open, food, onClose, onSaved }: Props) {
             </div>
           </div>
 
+          {error && <p className={styles.error}>{error}</p>}
           <button className={styles.submitBtn} type="submit" disabled={submitting}>
             {submitting ? 'Saving...' : isEdit ? 'Update' : 'Create'}
           </button>

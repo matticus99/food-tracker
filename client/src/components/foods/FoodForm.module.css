@@ -240,6 +240,13 @@
   gap: var(--space-md);
 }
 
+.error {
+  color: var(--accent-red, #ef4444);
+  font-size: 0.8rem;
+  text-align: center;
+  margin: 0;
+}
+
 .submitBtn {
   padding: var(--space-sm) var(--space-md);
   border: none;
