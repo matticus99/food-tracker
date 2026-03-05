@@ -41,7 +41,8 @@ const updateUser: RequestHandler = async (req, res, next) => {
       .returning();
 
     invalidateUserCache();
-    res.json(updated);
+    const computedCalorieTarget = await getComputedCalorieTarget(updated as any);
+    res.json({ ...updated, computedCalorieTarget });
   } catch (err) {
     next(err);
   }

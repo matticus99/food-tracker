@@ -53,5 +53,5 @@ export function useApi<T>(path: string | null) {
     return () => controller.abort();
   }, [path]);
 
-  return { data, loading, error, refetch };
+  return { data, loading, error, refetch, setData };
 }
