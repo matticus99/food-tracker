@@ -3,9 +3,18 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.js';
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
+const rawUrl = process.env.DATABASE_URL;
+if (!rawUrl) {
   throw new Error('DATABASE_URL environment variable is required');
+}
+
+// URL-encode password if it contains special characters (e.g. & in password)
+let connectionString = rawUrl;
+try {
+  new URL(rawUrl);
+} catch {
+  const m = rawUrl.match(/^(postgres(?:ql)?:\/\/[^:]+:)(.+)(@.+)$/);
+  if (m) connectionString = m[1]! + encodeURIComponent(m[2]!) + m[3]!;
 }
 
 // Connection for queries (pooled)
