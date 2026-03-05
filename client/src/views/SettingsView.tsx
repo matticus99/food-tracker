@@ -55,7 +55,7 @@ function pickFormData(user: User): FormData {
 
 export default function SettingsView() {
   const { theme, setTheme } = useTheme();
-  const { data: user, loading, refetch } = useApi<User>('/user');
+  const { data: user, loading, setData: setUser } = useApi<User>('/user');
   const [form, setForm] = useState<Partial<FormData>>({});
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -91,12 +91,12 @@ export default function SettingsView() {
     savingRef.current = true;
     setSaving(true);
     try {
-      await apiFetch('/user', {
+      const updated = await apiFetch<User>('/user', {
         method: 'PUT',
         body: JSON.stringify(formRef.current),
       });
       dirtyRef.current = false;
-      refetch();
+      setUser(updated);
       toast('Settings saved', 'success');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to save', 'error');
@@ -108,7 +108,7 @@ export default function SettingsView() {
         saveTimerRef.current = setTimeout(() => doSave(), 300);
       }
     }
-  }, [refetch, toast]);
+  }, [setUser, toast]);
 
   // Debounced save — cancels any pending timer
   const scheduleSave = useCallback((delayMs = 500) => {
