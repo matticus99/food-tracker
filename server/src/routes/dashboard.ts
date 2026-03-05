@@ -30,7 +30,7 @@ router.get('/', async (req, res, next) => {
     const smoothing = Number(user.tdeeSmoothingFactor) || 0.1;
 
     // Run all queries in parallel
-    const [logEntries, todayWeight, tdeeHistoryData, intakeImported] = await Promise.all([
+    const [logEntries, todayWeight, tdeeHistoryData, intakeImported, computedCalorieTarget] = await Promise.all([
       // Food log for the given date
       db.select({
         id: foodLog.id,
@@ -73,6 +73,9 @@ router.get('/', async (req, res, next) => {
         .from(dailyIntake)
         .where(and(eq(dailyIntake.userId, userId), gte(dailyIntake.date, fromDate7)))
         .orderBy(dailyIntake.date),
+
+      // Computed calorie target (only needs user, runs in parallel)
+      getComputedCalorieTarget(user),
     ]);
 
     // Format TDEE data
@@ -137,8 +140,6 @@ router.get('/', async (req, res, next) => {
         carbs: 0,
       }));
     }
-
-    const computedCalorieTarget = await getComputedCalorieTarget(user);
 
     res.json({
       log: logEntries,

@@ -13,6 +13,7 @@ import importRoutes from './routes/import.js';
 import dashboardRoutes from './routes/dashboard.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { userMiddleware } from './middleware/userMiddleware.js';
+import { queryClient } from './db/connection.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
@@ -33,6 +34,16 @@ const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
 const importLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: 'Too many import requests, try again later' } });
 app.use('/api', apiLimiter);
 app.use('/api/import', importLimiter);
+
+// ── Request timeout (30s) ──
+app.use((_req, res, next) => {
+  res.setTimeout(30_000, () => {
+    if (!res.headersSent) {
+      res.status(504).json({ error: 'Request timeout' });
+    }
+  });
+  next();
+});
 
 // ── User middleware (caches userId for all /api routes) ──
 app.use('/api', userMiddleware);
@@ -55,6 +66,30 @@ app.get('/api/health', (_req, res) => {
 app.use(errorHandler);
 
 // ── Start ──
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+
+// Keep-alive timing: must exceed nginx upstream keepalive_timeout (default 60s)
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 66_000;
+
+// ── Graceful shutdown ──
+function gracefulShutdown(signal: string) {
+  console.log(`Received ${signal}. Shutting down gracefully...`);
+  server.close(() => {
+    queryClient.end({ timeout: 5 })
+      .then(() => {
+        console.log('Database connections closed.');
+        process.exit(0);
+      })
+      .catch(() => process.exit(1));
+  });
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10_000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

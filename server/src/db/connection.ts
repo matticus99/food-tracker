@@ -9,7 +9,12 @@ if (!connectionString) {
 }
 
 // Connection for queries (pooled)
-const queryClient = postgres(connectionString);
+const queryClient = postgres(connectionString, {
+  max: 10,
+  idle_timeout: 20,
+  connect_timeout: 10,
+  max_lifetime: 60 * 30,
+});
 
 export const db = drizzle(queryClient, { schema });
 export { queryClient };

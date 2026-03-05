@@ -56,16 +56,35 @@ router.post('/', async (req, res, next) => {
         .returning();
     }
 
-    // Trigger TDEE recalculation in background
-    recalculateTdee(req.userId).catch((err) => {
-      console.error('[TDEE Recalc Error]', err.message);
-    });
+    // Trigger TDEE recalculation in background (guarded against overlaps)
+    safeRecalculateTdee(req.userId);
 
     res.status(201).json(entry);
   } catch (err) {
     next(err);
   }
 });
+
+// Guard against overlapping TDEE recalculations
+let recalcInProgress = false;
+let recalcPending = false;
+
+function safeRecalculateTdee(userId: string) {
+  if (recalcInProgress) {
+    recalcPending = true;
+    return;
+  }
+  recalcInProgress = true;
+  recalculateTdee(userId)
+    .catch((err) => console.error('[TDEE Recalc Error]', err.message))
+    .finally(() => {
+      recalcInProgress = false;
+      if (recalcPending) {
+        recalcPending = false;
+        safeRecalculateTdee(userId);
+      }
+    });
+}
 
 // Fix 5: Batch TDEE upsert — replaces loop of 60-90 queries with a single batch
 async function recalculateTdee(userId: string) {
@@ -165,10 +184,8 @@ router.put('/:id', async (req, res, next) => {
 
     if (!entry) throw new AppError(404, 'Weight entry not found');
 
-    // Trigger TDEE recalculation in background
-    recalculateTdee(req.userId).catch((err) => {
-      console.error('[TDEE Recalc Error]', err.message);
-    });
+    // Trigger TDEE recalculation in background (guarded against overlaps)
+    safeRecalculateTdee(req.userId);
 
     res.json(entry);
   } catch (err) {

@@ -81,7 +81,7 @@ router.get('/summary', async (req, res, next) => {
     const smoothing = Number(user.tdeeSmoothingFactor) || 0.1;
 
     // Run all queries in parallel
-    const [tdeeHistoryData, weightsRaw, intakeData] = await Promise.all([
+    const [tdeeHistoryData, weightsRaw, intakeData, computedTarget] = await Promise.all([
       db.select()
         .from(tdeeHistory)
         .where(and(eq(tdeeHistory.userId, req.userId), gte(tdeeHistory.date, fromDate)))
@@ -91,6 +91,7 @@ router.get('/summary', async (req, res, next) => {
         .where(and(eq(weightLog.userId, req.userId), gte(weightLog.date, fromDate)))
         .orderBy(weightLog.date),
       getDailyIntakeData(req.userId, fromDate),
+      getComputedCalorieTarget(user),
     ]);
 
     // TDEE data
@@ -119,8 +120,6 @@ router.get('/summary', async (req, res, next) => {
       weightsRaw.map(w => ({ date: w.date, weight: Number(w.weight) })),
       smoothing,
     );
-
-    const computedTarget = await getComputedCalorieTarget(user);
 
     // BMR
     const weight = Number(user.currentWeight);
