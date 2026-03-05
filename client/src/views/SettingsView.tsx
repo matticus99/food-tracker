@@ -55,7 +55,7 @@ function pickFormData(user: User): FormData {
 
 export default function SettingsView() {
   const { theme, setTheme } = useTheme();
-  const { data: user, loading, setData: setUser } = useApi<User>('/user');
+  const { data: user, loading, refetch } = useApi<User>('/user');
   const [form, setForm] = useState<Partial<FormData>>({});
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -88,20 +88,21 @@ export default function SettingsView() {
 
     setSaving(true);
     try {
-      const updated = await apiFetch<User>('/user', {
+      await apiFetch<User>('/user', {
         method: 'PUT',
         body: JSON.stringify(formRef.current),
       });
       dirtyRef.current = false;
       setDirty(false);
-      setUser(updated);
+      // Refetch to get the freshly computed calorie target from the server
+      refetch();
       toast('Settings saved', 'success');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed to save', 'error');
     } finally {
       setSaving(false);
     }
-  }, [saving, setUser, toast]);
+  }, [saving, refetch, toast]);
 
   // Save pending changes on unmount (navigating away)
   useEffect(() => {
