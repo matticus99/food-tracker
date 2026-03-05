@@ -21,6 +21,38 @@
   font-family: var(--font-body);
 }
 
+.recalculateWrap {
+  position: sticky;
+  bottom: calc(var(--nav-height, 64px) + var(--space-md));
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  padding: var(--space-sm) 0;
+}
+
+.recalculateBtn {
+  width: 100%;
+  padding: var(--space-sm) var(--space-lg);
+  border: none;
+  background: var(--accent-indigo);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.recalculateBtn:hover {
+  opacity: 0.9;
+}
+
+.recalculateBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .saving {
   text-align: center;
   font-family: var(--font-body);
