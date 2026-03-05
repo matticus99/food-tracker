@@ -125,12 +125,10 @@ export default function SettingsView() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       if (dirtyRef.current) {
-        fetch('/api/user', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formRef.current),
-          keepalive: true,
-        });
+        navigator.sendBeacon(
+          '/api/user',
+          new Blob([JSON.stringify(formRef.current)], { type: 'application/json' }),
+        );
       }
     };
   }, []);

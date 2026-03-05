@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { users } from '../db/schema.js';
@@ -19,8 +19,8 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// PUT /api/user — update user settings
-router.put('/', async (req, res, next) => {
+// PUT/POST /api/user — update user settings (POST needed for sendBeacon on iOS)
+const updateUser: RequestHandler = async (req, res, next) => {
   try {
     const { age, sex, heightInches, currentWeight, objective, activityLevel,
             goalPace, proteinTarget, fatTarget, carbTarget,
@@ -45,6 +45,8 @@ router.put('/', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+};
+router.put('/', updateUser);
+router.post('/', updateUser);
 
 export default router;
