@@ -90,12 +90,20 @@ export default function SettingsView() {
 
     savingRef.current = true;
     setSaving(true);
+    // Capture the form snapshot we're about to save so we can detect
+    // whether new edits arrived while the request was in-flight.
+    const snapshot = formRef.current;
     try {
       const updated = await apiFetch<User>('/user', {
         method: 'PUT',
-        body: JSON.stringify(formRef.current),
+        body: JSON.stringify(snapshot),
       });
-      dirtyRef.current = false;
+      // Only clear dirty flag if no new edits happened during the save.
+      // updateField creates a new object reference, so a strict equality
+      // check tells us whether the form was modified while we were saving.
+      if (formRef.current === snapshot) {
+        dirtyRef.current = false;
+      }
       setUser(updated);
       toast('Settings saved', 'success');
     } catch (err) {
