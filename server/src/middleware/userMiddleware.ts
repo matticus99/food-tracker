@@ -46,8 +46,23 @@ export async function userMiddleware(req: Request, _res: Response, next: NextFun
       return next();
     }
 
-    const [user] = await db.select().from(users).limit(1);
-    if (!user) throw new AppError(404, 'No user found');
+    let [user] = await db.select().from(users).limit(1);
+    if (!user) {
+      // Auto-create a default user on first run (no seeded foods)
+      [user] = await db.insert(users).values({
+        age: 30,
+        sex: 'male',
+        heightInches: '70',
+        currentWeight: '180',
+        objective: 'maintain',
+        activityLevel: '1.25',
+        goalPace: 500,
+        proteinTarget: 180,
+        fatTarget: 70,
+        carbTarget: 240,
+      }).returning();
+      console.log('[UserMiddleware] Created default user:', user!.id);
+    }
 
     cachedUser = user as CachedUser;
     cacheTimestamp = now;
