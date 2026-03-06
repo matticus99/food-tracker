@@ -122,16 +122,6 @@ export default function FoodLogView() {
             <Skeleton width="100%" height="52px" radius="var(--radius-md)" />
             <Skeleton width="100%" height="52px" radius="var(--radius-md)" />
           </div>
-        ) : isEmpty ? (
-          <EmptyState
-            icon="🍽️"
-            title="No food logged yet"
-            description="Tap + to log your first meal of the day"
-            action={{
-              label: 'Add Food',
-              onClick: () => openAddModal(new Date().getHours()),
-            }}
-          />
         ) : (
           <Timeline
             entries={entries ?? []}
