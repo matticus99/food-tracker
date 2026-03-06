@@ -32,7 +32,7 @@ function formatHour(h: number): string {
   return `${h - 12} PM`;
 }
 
-const HOURS = Array.from({ length: 18 }, (_, i) => i + 5); // 5 AM to 10 PM
+const HOURS = Array.from({ length: 9 }, (_, i) => i * 2 + 6); // 6 AM to 10 PM, 2-hour increments
 
 export default function Timeline({ entries, onDelete, onEdit, onAddAtHour }: Props) {
   const byHour = new Map<number, LogEntryData[]>();
@@ -42,9 +42,8 @@ export default function Timeline({ entries, onDelete, onEdit, onAddAtHour }: Pro
     byHour.set(entry.timeHour, list);
   }
 
-  // Only show hours that have entries, plus some default hours
-  const activeHours = new Set([...byHour.keys(), 7, 12, 18]);
-  const hoursToShow = HOURS.filter((h) => activeHours.has(h));
+  // Always show all 2-hour slots, plus any odd hours that have entries
+  const hoursToShow = [...new Set([...HOURS, ...byHour.keys()])].sort((a, b) => a - b);
 
   return (
     <div className={styles.timeline}>
