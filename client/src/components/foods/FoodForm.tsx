@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../../hooks/useApi';
 import { type Unit, convertToGrams, convertFromGrams, formatAmount } from '../../utils/unitConversions';
+import { CATEGORY_KEYS, getCategoryLabel, type CategoryConfig } from '../../constants/categories';
 import styles from './FoodForm.module.css';
 
 interface FoodData {
@@ -21,11 +22,8 @@ interface Props {
   food: FoodData | null;
   onClose: () => void;
   onSaved: () => void;
+  categoryConfig?: CategoryConfig | null;
 }
-
-const CATEGORIES = [
-  'favorites', 'proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks',
-];
 
 const EMOJIS = ['🍗', '🥩', '🍳', '🥚', '🍚', '🍞', '🥗', '🥦', '🍎', '🫐', '🥛', '🧀', '🥜', '☕', '🍽️'];
 
@@ -34,7 +32,7 @@ function formatNum(v: number): string {
   return parseFloat(v.toFixed(1)).toString();
 }
 
-export default function FoodForm({ open, food, onClose, onSaved }: Props) {
+export default function FoodForm({ open, food, onClose, onSaved, categoryConfig }: Props) {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🍽️');
   const [category, setCategory] = useState('favorites');
@@ -276,8 +274,8 @@ export default function FoodForm({ open, food, onClose, onSaved }: Props) {
             <div className={styles.field}>
               <label className={styles.label}>Category</label>
               <select className={styles.input} value={category} onChange={(e) => setCategory(e.target.value)}>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                {CATEGORY_KEYS.map((c) => (
+                  <option key={c} value={c}>{getCategoryLabel(c, categoryConfig)}</option>
                 ))}
               </select>
             </div>

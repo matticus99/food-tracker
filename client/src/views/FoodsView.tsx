@@ -8,6 +8,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 import EmptyState from '../components/ui/EmptyState';
 import { useToast } from '../components/ui/Toast';
 import { useApi, apiFetch } from '../hooks/useApi';
+import type { CategoryConfig } from '../constants/categories';
 import styles from './FoodsView.module.css';
 import viewStyles from './Views.module.css';
 
@@ -31,6 +32,7 @@ export default function FoodsView() {
   const [formOpen, setFormOpen] = useState(false);
   const [editFood, setEditFood] = useState<Food | null>(null);
   const { toast } = useToast();
+  const { data: user } = useApi<{ categoryConfig: CategoryConfig | null }>('/user');
 
   const params = new URLSearchParams();
   if (search) params.set('search', search);
@@ -75,7 +77,7 @@ export default function FoodsView() {
       <PageHeader title="My Foods" />
       <div className={styles.content}>
         <SearchBar value={search} onChange={setSearch} />
-        <CategoryTabs active={category} onChange={setCategory} />
+        <CategoryTabs active={category} onChange={setCategory} categoryConfig={user?.categoryConfig} />
         <div className={styles.macroHeader}>
           <span>Cal</span>
           <span>P</span>
@@ -117,6 +119,7 @@ export default function FoodsView() {
         food={editFood}
         onClose={() => setFormOpen(false)}
         onSaved={handleSaved}
+        categoryConfig={user?.categoryConfig}
       />
     </div>
   );

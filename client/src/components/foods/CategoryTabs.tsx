@@ -1,26 +1,24 @@
+import { CATEGORY_KEYS, getCategoryLabel, type CategoryConfig } from '../../constants/categories';
 import styles from './CategoryTabs.module.css';
-
-const CATEGORIES = [
-  { value: '', label: 'All' },
-  { value: 'favorites', label: 'Favorites' },
-  { value: 'proteins', label: 'Proteins' },
-  { value: 'grains', label: 'Grains' },
-  { value: 'vegetables', label: 'Vegetables' },
-  { value: 'fruits', label: 'Fruits' },
-  { value: 'dairy', label: 'Dairy' },
-  { value: 'snacks', label: 'Snacks' },
-  { value: 'drinks', label: 'Drinks' },
-];
 
 interface Props {
   active: string;
   onChange: (v: string) => void;
+  categoryConfig?: CategoryConfig | null;
 }
 
-export default function CategoryTabs({ active, onChange }: Props) {
+export default function CategoryTabs({ active, onChange, categoryConfig }: Props) {
+  const categories = [
+    { value: '', label: 'All' },
+    ...CATEGORY_KEYS.map((key) => ({
+      value: key,
+      label: getCategoryLabel(key, categoryConfig),
+    })),
+  ];
+
   return (
     <div className={styles.tabs}>
-      {CATEGORIES.map((cat) => (
+      {categories.map((cat) => (
         <button
           key={cat.value}
           className={`${styles.tab} ${active === cat.value ? styles.active : ''}`}

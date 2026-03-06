@@ -40,6 +40,7 @@ const updateUser: RequestHandler = async (req, res, next) => {
       setObj.activityLevel = validated.activityLevel != null ? String(validated.activityLevel) : null;
     if (validated.tdeeSmoothingFactor !== undefined)
       setObj.tdeeSmoothingFactor = validated.tdeeSmoothingFactor != null ? String(validated.tdeeSmoothingFactor) : null;
+    if (validated.categoryConfig !== undefined) setObj.categoryConfig = validated.categoryConfig;
 
     const [updated] = await db
       .update(users)

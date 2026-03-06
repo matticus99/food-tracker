@@ -9,6 +9,7 @@ import {
   pgEnum,
   uniqueIndex,
   index,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 
 // ── Enums ──
@@ -37,6 +38,7 @@ export const users = pgTable('users', {
   fatTarget: integer('fat_target'),
   carbTarget: integer('carb_target'),
   tdeeSmoothingFactor: decimal('tdee_smoothing_factor', { precision: 4, scale: 3 }).default('0.100'),
+  categoryConfig: jsonb('category_config'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
