@@ -13,7 +13,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export default function CalorieRing({ consumed, target }: Props) {
   const [animatedOffset, setAnimatedOffset] = useState(CIRCUMFERENCE);
-  const remaining = Math.max(0, target - consumed);
+  const remaining = target - consumed;
   const pct = target > 0 ? Math.min(consumed / target, 1) : 0;
   const offset = CIRCUMFERENCE * (1 - pct);
 

@@ -19,8 +19,8 @@ describe('CalorieRing', () => {
     render(<CalorieRing consumed={2500} target={2000} />);
 
     expect(screen.getByText('over')).toBeInTheDocument();
-    // remaining should be 0 (clamped via Math.max(0, target - consumed))
-    expect(screen.getByText('0')).toBeInTheDocument();
+    // remaining should show negative difference
+    expect(screen.getByText('-500')).toBeInTheDocument();
   });
 
   it('handles zero consumed', () => {
