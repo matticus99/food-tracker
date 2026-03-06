@@ -1,6 +1,26 @@
 import { z } from 'zod';
+import { AppError } from '../middleware/errorHandler.js';
 
-const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD format');
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const dateString = z.string().regex(DATE_REGEX, 'Date must be YYYY-MM-DD format');
+
+/** Validate a date query parameter, throwing AppError(400) if invalid. */
+export function validateDateParam(value: unknown, name = 'date'): string {
+  if (!value || typeof value !== 'string' || !DATE_REGEX.test(value)) {
+    throw new AppError(400, `${name} must be a valid date (YYYY-MM-DD)`);
+  }
+  return value;
+}
+
+/** Validate a UUID path parameter, throwing AppError(400) if invalid. */
+export function validateUuidParam(value: string, name = 'id'): string {
+  if (!UUID_REGEX.test(value)) {
+    throw new AppError(400, `${name} must be a valid UUID`);
+  }
+  return value;
+}
 
 export const userUpdateSchema = z.object({
   age: z.number().int().min(1).max(150).nullish(),

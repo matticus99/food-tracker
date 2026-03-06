@@ -3,7 +3,7 @@ import { eq, and, ilike } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { foods } from '../db/schema.js';
 import { AppError, validate } from '../middleware/errorHandler.js';
-import { foodCreateSchema, foodUpdateSchema } from '../validation/schemas.js';
+import { foodCreateSchema, foodUpdateSchema, validateUuidParam } from '../validation/schemas.js';
 
 const router = Router();
 
@@ -69,6 +69,7 @@ router.put('/:id', async (req, res, next) => {
   try {
     const validated = validate(foodUpdateSchema, req.body);
 
+    const id = validateUuidParam(req.params.id!);
     const { servingGrams, calories, protein, fat, carbs, ...rest } = validated;
     const [food] = await db
       .update(foods)
@@ -81,7 +82,7 @@ router.put('/:id', async (req, res, next) => {
         ...(carbs !== undefined && { carbs: carbs != null ? String(carbs) : null }),
         updatedAt: new Date(),
       })
-      .where(and(eq(foods.id, req.params.id!), eq(foods.userId, req.userId)))
+      .where(and(eq(foods.id, id), eq(foods.userId, req.userId)))
       .returning();
 
     if (!food) throw new AppError(404, 'Food not found');
@@ -94,9 +95,10 @@ router.put('/:id', async (req, res, next) => {
 // DELETE /api/foods/:id
 router.delete('/:id', async (req, res, next) => {
   try {
+    const id = validateUuidParam(req.params.id!);
     const [food] = await db
       .delete(foods)
-      .where(and(eq(foods.id, req.params.id!), eq(foods.userId, req.userId)))
+      .where(and(eq(foods.id, id), eq(foods.userId, req.userId)))
       .returning();
 
     if (!food) throw new AppError(404, 'Food not found');

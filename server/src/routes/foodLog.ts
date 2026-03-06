@@ -3,17 +3,14 @@ import { eq, and } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { foodLog, foods } from '../db/schema.js';
 import { AppError, validate } from '../middleware/errorHandler.js';
-import { foodLogCreateSchema, foodLogUpdateSchema } from '../validation/schemas.js';
+import { foodLogCreateSchema, foodLogUpdateSchema, validateDateParam, validateUuidParam } from '../validation/schemas.js';
 
 const router = Router();
 
 // GET /api/log?date=YYYY-MM-DD
 router.get('/', async (req, res, next) => {
   try {
-    const { date } = req.query;
-    if (!date || typeof date !== 'string') {
-      throw new AppError(400, 'date query parameter is required (YYYY-MM-DD)');
-    }
+    const date = validateDateParam(req.query.date, 'date');
 
     const entries = await db
       .select({
@@ -86,6 +83,7 @@ router.post('/batch', async (req, res, next) => {
 // PUT /api/log/:id
 router.put('/:id', async (req, res, next) => {
   try {
+    const id = validateUuidParam(req.params.id!);
     const validated = validate(foodLogUpdateSchema, req.body);
 
     const { servings, ...rest } = validated;
@@ -96,7 +94,7 @@ router.put('/:id', async (req, res, next) => {
         ...(servings !== undefined && { servings: String(servings) }),
         updatedAt: new Date(),
       })
-      .where(and(eq(foodLog.id, req.params.id!), eq(foodLog.userId, req.userId)))
+      .where(and(eq(foodLog.id, id), eq(foodLog.userId, req.userId)))
       .returning();
 
     if (!entry) throw new AppError(404, 'Log entry not found');
@@ -109,9 +107,10 @@ router.put('/:id', async (req, res, next) => {
 // DELETE /api/log/:id
 router.delete('/:id', async (req, res, next) => {
   try {
+    const id = validateUuidParam(req.params.id!);
     const [entry] = await db
       .delete(foodLog)
-      .where(and(eq(foodLog.id, req.params.id!), eq(foodLog.userId, req.userId)))
+      .where(and(eq(foodLog.id, id), eq(foodLog.userId, req.userId)))
       .returning();
 
     if (!entry) throw new AppError(404, 'Log entry not found');

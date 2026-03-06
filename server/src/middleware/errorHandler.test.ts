@@ -67,7 +67,7 @@ describe('errorHandler', () => {
     errorHandler(err, mockReq, res, mockNext);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Resource not found' });
+    expect(res.json).toHaveBeenCalledWith({ error: 'Resource not found', message: 'Resource not found' });
   });
 
   it('responds with 500 for generic errors', () => {
@@ -77,7 +77,7 @@ describe('errorHandler', () => {
     errorHandler(err, mockReq, res, mockNext);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
+    expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error', message: 'Internal server error' });
   });
 
   it('logs error message to console', () => {
@@ -109,7 +109,7 @@ describe('errorHandler', () => {
 
     errorHandler(err, mockReq, res, mockNext);
 
-    expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
+    expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error', message: 'Internal server error' });
     // The actual error message should NOT appear in the response
     expect(res.json).not.toHaveBeenCalledWith(
       expect.objectContaining({ error: 'DB connection pool exhausted' }),
@@ -123,6 +123,6 @@ describe('errorHandler', () => {
     errorHandler(err, mockReq, res, mockNext);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error' });
+    expect(res.json).toHaveBeenCalledWith({ error: 'Internal server error', message: 'Internal server error' });
   });
 });

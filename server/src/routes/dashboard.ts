@@ -3,6 +3,7 @@ import { eq, and, gte, lte } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { foodLog, foods, weightLog, tdeeHistory, dailyIntake } from '../db/schema.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { validateDateParam } from '../validation/schemas.js';
 import { calculateTdeeHistory } from '../services/tdee.js';
 import { getComputedCalorieTarget } from '../services/calorieTarget.js';
 
@@ -19,10 +20,7 @@ function daysAgo(days: number): string {
 // Returns all data needed for DashboardView in a single response
 router.get('/', async (req, res, next) => {
   try {
-    const { date } = req.query;
-    if (!date || typeof date !== 'string') {
-      throw new AppError(400, 'date query parameter is required (YYYY-MM-DD)');
-    }
+    const date = validateDateParam(req.query.date, 'date');
 
     const user = req.user;
     const userId = req.userId;

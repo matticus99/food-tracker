@@ -5,7 +5,7 @@ import { weightLog, dailyIntake, foodLog, foods, tdeeHistory, users } from '../d
 import { AppError, validate } from '../middleware/errorHandler.js';
 import { calculateTdeeHistory } from '../services/tdee.js';
 import { invalidateUserCache } from '../middleware/userMiddleware.js';
-import { weightCreateSchema } from '../validation/schemas.js';
+import { weightCreateSchema, validateDateParam, validateUuidParam } from '../validation/schemas.js';
 
 const router = Router();
 
@@ -15,8 +15,8 @@ router.get('/', async (req, res, next) => {
     const { from, to } = req.query;
 
     const conditions = [eq(weightLog.userId, req.userId)];
-    if (from && typeof from === 'string') conditions.push(gte(weightLog.date, from));
-    if (to && typeof to === 'string') conditions.push(lte(weightLog.date, to));
+    if (from) conditions.push(gte(weightLog.date, validateDateParam(from, 'from')));
+    if (to) conditions.push(lte(weightLog.date, validateDateParam(to, 'to')));
 
     const entries = await db
       .select()
@@ -175,11 +175,12 @@ async function recalculateTdee(userId: string) {
 // PUT /api/weight/:id
 router.put('/:id', async (req, res, next) => {
   try {
+    const id = validateUuidParam(req.params.id!);
     const { weight: weightVal } = validate(weightCreateSchema.pick({ weight: true }), req.body);
     const [entry] = await db
       .update(weightLog)
       .set({ weight: String(weightVal) })
-      .where(and(eq(weightLog.id, req.params.id!), eq(weightLog.userId, req.userId)))
+      .where(and(eq(weightLog.id, id), eq(weightLog.userId, req.userId)))
       .returning();
 
     if (!entry) throw new AppError(404, 'Weight entry not found');

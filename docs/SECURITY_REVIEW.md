@@ -499,3 +499,74 @@ These are nice-to-have for a localhost app:
 - **Memory-only uploads** — No files written to disk
 - **`.env` gitignored** — Credentials not in version control
 - **Strong client test coverage** — 274 component/hook/context tests
+
+---
+
+## Second Security Review
+
+**Date:** 2026-03-05
+**Scope:** Full codebase re-audit from scratch
+**Test Suite:** 145 server tests passing (was 137 with 4 failures), 274 client tests (9 pre-existing failures from component refactors)
+
+### Summary
+
+Re-examined the entire codebase with false-positive validation against the app's threat model (single-user, self-hosted, localhost). The first review's remediation is **fully implemented** — all Phase 1-3 fixes are in place. Two robustness gaps and one testing gap were identified and resolved.
+
+### Remediation Status (First Review Findings)
+
+| Finding | Status | Evidence |
+|---------|--------|----------|
+| H1: Vulnerable `xlsx` | **RESOLVED** | Replaced with `exceljs` |
+| M1: Mass assignment | **RESOLVED** | All schemas use `.strict()`, destructured field whitelisting |
+| M2: No input validation | **RESOLVED** | Zod schemas on all mutation routes |
+| M3: Import DoS | **RESOLVED** | 5,000 row limit, rate limiting, transaction |
+| M4: Timezone bugs | **RESOLVED** | `Date.UTC()` used in `daysAgo()` |
+| M5: TDEE integrity | **RESOLVED** | Error logging, batch upsert |
+| M6: Weak file validation | **RESOLVED** | Extension + magic bytes + ExcelJS parsing |
+| M7: ILIKE injection | **RESOLVED** | Special chars escaped: `search.replace(/[%_\\]/g, '\\$&')` |
+| M8: No pagination | **RESOLVED** | `limit` (max 200) + `offset` on food queries |
+| L1: No security headers | **RESOLVED** | `helmet()` configured |
+| L2: No rate limiting | **RESOLVED** | 200/15min API, 5/hr import |
+| L3: Negative values | **RESOLVED** | Zod `.positive()` / `.min(0)` constraints |
+| L4: Weight PUT no TDEE recalc | **RESOLVED** | `safeRecalculateTdee()` called on PUT |
+| L6: Errors swallowed | **RESOLVED** | `console.error('[TDEE Recalc Error]', err.message)` |
+
+### New Findings (This Review)
+
+#### F1: GET endpoint date params not validated (LOW — resolved)
+- **Files:** `weight.ts`, `dashboard.ts`, `foodLog.ts`
+- **Issue:** GET routes accepted raw date strings without format validation. Invalid dates caused PostgreSQL 500 errors instead of clean 400 responses.
+- **Fix:** Added `validateDateParam()` helper in `schemas.ts`, applied to all GET routes.
+
+#### F2: UUID path params not validated (LOW — resolved)
+- **Files:** `foods.ts`, `foodLog.ts`, `weight.ts`
+- **Issue:** `req.params.id` used directly without UUID format validation. Non-UUID strings caused PostgreSQL type errors → 500.
+- **Fix:** Added `validateUuidParam()` helper in `schemas.ts`, applied to all PUT/DELETE routes.
+
+#### F3: Pre-existing test failures (LOW — resolved)
+- **File:** `errorHandler.test.ts`
+- **Issue:** 4 tests expected `{ error }` but handler returns `{ error, message }`. Tests were out of sync with implementation.
+- **Fix:** Updated tests to match current response shape.
+
+### False Positives Validated
+
+The following were raised during audit but validated as non-issues:
+
+| Finding | Verdict | Reasoning |
+|---------|---------|-----------|
+| No authentication | False positive | Single-user by design; all queries scoped by `userId` |
+| Hardcoded .env credentials | False positive | Not in git history; localhost-only; `.gitignore` correct |
+| Missing CSRF | False positive | No cookies, JSON API with CORS — CSRF not exploitable |
+| Overly permissive CORS | False positive | `localhost:5173` fallback correct for dev |
+| File upload validation | False positive | Defense-in-depth: extension + magic bytes + ExcelJS + rate limit |
+| Global state race condition | False positive | Node.js single-threaded; single-user; worst case = redundant recalc |
+| Missing security headers | False positive | `helmet()` defaults appropriate for JSON API |
+| `z.coerce.number()` issues | False positive | Factually wrong — `Number("123abc")` returns NaN, rejected by Zod |
+
+### Test Coverage Update
+
+| Category | Before | After |
+|----------|--------|-------|
+| Server unit tests | 133 passing, 4 failing | 145 passing, 0 failing |
+| Validation helper tests | 0 | 8 (validateDateParam + validateUuidParam) |
+| Error handler tests | 7 passing, 4 failing | 11 passing, 0 failing |

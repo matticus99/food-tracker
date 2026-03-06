@@ -7,6 +7,8 @@ import {
   foodLogUpdateSchema,
   weightCreateSchema,
   daysQuerySchema,
+  validateDateParam,
+  validateUuidParam,
 } from './schemas.js';
 
 // ── userUpdateSchema ────────────────────────────────────────────────────────
@@ -386,5 +388,59 @@ describe('daysQuerySchema', () => {
 
   it('defaults to 14 for float', () => {
     expect(daysQuerySchema.parse(3.5)).toBe(14);
+  });
+});
+
+// ── validateDateParam ─────────────────────────────────────────────────────
+
+describe('validateDateParam', () => {
+  it('accepts valid YYYY-MM-DD dates', () => {
+    expect(validateDateParam('2024-03-01')).toBe('2024-03-01');
+    expect(validateDateParam('2024-12-31')).toBe('2024-12-31');
+    expect(validateDateParam('2000-01-01')).toBe('2000-01-01');
+  });
+
+  it('throws AppError(400) for empty/missing values', () => {
+    expect(() => validateDateParam(undefined)).toThrow('must be a valid date');
+    expect(() => validateDateParam(null)).toThrow('must be a valid date');
+    expect(() => validateDateParam('')).toThrow('must be a valid date');
+  });
+
+  it('throws AppError(400) for invalid date formats', () => {
+    expect(() => validateDateParam('notadate')).toThrow('must be a valid date');
+    expect(() => validateDateParam('03-01-2024')).toThrow('must be a valid date');
+    expect(() => validateDateParam('2024/03/01')).toThrow('must be a valid date');
+    expect(() => validateDateParam('2024-3-1')).toThrow('must be a valid date');
+    expect(() => validateDateParam('March 1, 2024')).toThrow('must be a valid date');
+  });
+
+  it('throws AppError(400) for non-string types', () => {
+    expect(() => validateDateParam(12345)).toThrow('must be a valid date');
+    expect(() => validateDateParam(true)).toThrow('must be a valid date');
+    expect(() => validateDateParam({})).toThrow('must be a valid date');
+  });
+
+  it('includes custom parameter name in error message', () => {
+    expect(() => validateDateParam('bad', 'from')).toThrow('from must be a valid date');
+  });
+});
+
+// ── validateUuidParam ─────────────────────────────────────────────────────
+
+describe('validateUuidParam', () => {
+  it('accepts valid UUIDs', () => {
+    expect(validateUuidParam('550e8400-e29b-41d4-a716-446655440000')).toBe('550e8400-e29b-41d4-a716-446655440000');
+    expect(validateUuidParam('A550E840-E29B-41D4-A716-446655440000')).toBe('A550E840-E29B-41D4-A716-446655440000');
+  });
+
+  it('throws AppError(400) for non-UUID strings', () => {
+    expect(() => validateUuidParam('not-a-uuid')).toThrow('must be a valid UUID');
+    expect(() => validateUuidParam('12345')).toThrow('must be a valid UUID');
+    expect(() => validateUuidParam('')).toThrow('must be a valid UUID');
+    expect(() => validateUuidParam('550e8400e29b41d4a716446655440000')).toThrow('must be a valid UUID'); // no dashes
+  });
+
+  it('includes custom parameter name in error message', () => {
+    expect(() => validateUuidParam('bad', 'foodId')).toThrow('foodId must be a valid UUID');
   });
 });
