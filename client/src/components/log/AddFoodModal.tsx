@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApi, apiFetch } from '../../hooks/useApi';
+import { getCategoryLabel, type CategoryConfig } from '../../constants/categories';
 import styles from './AddFoodModal.module.css';
 
 interface Food {
@@ -26,17 +27,18 @@ interface Props {
   date: string;
   onClose: () => void;
   onAdded: () => void;
+  categoryConfig?: CategoryConfig | null;
 }
 
-export default function AddFoodModal({ open, hour, date, onClose, onAdded }: Props) {
+export default function AddFoodModal({ open, hour, date, onClose, onAdded, categoryConfig }: Props) {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'favorites' | 'all'>('favorites');
+  const [filter, setFilter] = useState<string>('favorites');
   const [selections, setSelections] = useState<Map<string, SelectedFood>>(new Map());
   const [submitting, setSubmitting] = useState(false);
 
   const params = new URLSearchParams();
   if (search) params.set('search', search);
-  if (filter === 'favorites') params.set('category', 'favorites');
+  if (filter !== 'all') params.set('category', filter);
   const query = params.toString() ? `?${params}` : '';
   const { data: foods } = useApi<Food[]>(open ? `/foods${query}` : null);
 
@@ -110,18 +112,22 @@ export default function AddFoodModal({ open, hour, date, onClose, onAdded }: Pro
         </div>
 
         <div className={styles.filterTabs}>
-          <button
-            className={`${styles.filterTab} ${filter === 'favorites' ? styles.filterTabActive : ''}`}
-            onClick={() => setFilter('favorites')}
-          >
-            Favorites
-          </button>
-          <button
-            className={`${styles.filterTab} ${filter === 'all' ? styles.filterTabActive : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            All Foods
-          </button>
+          {[
+            { value: 'favorites', label: getCategoryLabel('favorites', categoryConfig) },
+            ...(categoryConfig?.pinnedCategories ?? []).map((key) => ({
+              value: key,
+              label: getCategoryLabel(key, categoryConfig),
+            })),
+            { value: 'all', label: 'All Foods' },
+          ].map((tab) => (
+            <button
+              key={tab.value}
+              className={`${styles.filterTab} ${filter === tab.value ? styles.filterTabActive : ''}`}
+              onClick={() => setFilter(tab.value)}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {selections.size > 0 && (

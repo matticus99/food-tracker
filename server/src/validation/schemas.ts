@@ -22,6 +22,17 @@ export function validateUuidParam(value: string, name = 'id'): string {
   return value;
 }
 
+const FOOD_CATEGORIES = ['favorites', 'proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks'] as const;
+const PINNABLE_CATEGORIES = ['proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks'] as const;
+
+const categoryConfigSchema = z.object({
+  labels: z.record(
+    z.string().refine((k) => (FOOD_CATEGORIES as readonly string[]).includes(k), { message: 'Invalid category key' }),
+    z.string().min(1).max(30),
+  ).optional(),
+  pinnedCategories: z.array(z.enum(PINNABLE_CATEGORIES)).max(2).optional(),
+}).nullish();
+
 export const userUpdateSchema = z.object({
   age: z.number().int().min(1).max(150).nullish(),
   sex: z.enum(['male', 'female']).nullish(),
@@ -34,6 +45,7 @@ export const userUpdateSchema = z.object({
   fatTarget: z.number().int().min(0).max(5000).nullish(),
   carbTarget: z.number().int().min(0).max(5000).nullish(),
   tdeeSmoothingFactor: z.coerce.number().min(0.01).max(1).nullish(),
+  categoryConfig: categoryConfigSchema,
 }).strict();
 
 export const foodCreateSchema = z.object({

@@ -11,6 +11,7 @@ import EmptyState from '../components/ui/EmptyState';
 import { useToast } from '../components/ui/Toast';
 import { useDate } from '../context/DateContext';
 import { useApi, apiFetch } from '../hooks/useApi';
+import type { CategoryConfig } from '../constants/categories';
 import styles from './FoodLogView.module.css';
 import viewStyles from './Views.module.css';
 
@@ -34,6 +35,7 @@ interface LogEntry {
 export default function FoodLogView() {
   const { date, dateStr } = useDate();
   const { data: entries, loading, refetch } = useApi<LogEntry[]>(`/log?date=${dateStr}`);
+  const { data: user } = useApi<{ categoryConfig: CategoryConfig | null }>('/user');
   const [modalOpen, setModalOpen] = useState(false);
   const [modalHour, setModalHour] = useState(12);
   const [editEntry, setEditEntry] = useState<EditEntry | null>(null);
@@ -141,6 +143,7 @@ export default function FoodLogView() {
         date={dateStr}
         onClose={() => setModalOpen(false)}
         onAdded={handleAdded}
+        categoryConfig={user?.categoryConfig}
       />
       <EditFoodModal
         entry={editEntry}

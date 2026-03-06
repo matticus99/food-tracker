@@ -17,6 +17,7 @@ interface CachedUser {
   fatTarget: number | null;
   carbTarget: number | null;
   tdeeSmoothingFactor: string | null;
+  categoryConfig: { labels?: Record<string, string>; pinnedCategories?: string[] } | null;
 }
 
 declare global {
