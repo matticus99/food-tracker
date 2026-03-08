@@ -4,6 +4,7 @@ import styles from './CalorieRing.module.css';
 interface Props {
   consumed: number;
   target: number;
+  tdee?: number;
 }
 
 const SIZE = 180;
@@ -11,7 +12,7 @@ const STROKE = 12;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export default function CalorieRing({ consumed, target }: Props) {
+export default function CalorieRing({ consumed, target, tdee }: Props) {
   const [animatedOffset, setAnimatedOffset] = useState(CIRCUMFERENCE);
   const remaining = target - consumed;
   const pct = target > 0 ? Math.min(consumed / target, 1) : 0;
@@ -46,7 +47,7 @@ export default function CalorieRing({ consumed, target }: Props) {
           cy={SIZE / 2}
           r={RADIUS}
           fill="none"
-          stroke={isOver ? 'var(--accent-rose)' : 'url(#ringGradient)'}
+          stroke={consumed <= target ? 'url(#ringGradient)' : (tdee != null && consumed > tdee ? 'var(--accent-rose)' : 'var(--accent-amber)')}
           strokeWidth={STROKE}
           strokeDasharray={CIRCUMFERENCE}
           strokeDashoffset={animatedOffset}

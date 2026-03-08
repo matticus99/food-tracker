@@ -162,7 +162,7 @@ export default function DashboardView() {
         ) : (
           <>
             <div className={`${styles.ringSection} ${viewStyles.staggerIn}`}>
-              <CalorieRing consumed={totals.calories} target={data?.computedCalorieTarget?.calorieTarget ?? user?.calorieTarget ?? 2200} />
+              <CalorieRing consumed={totals.calories} target={data?.computedCalorieTarget?.calorieTarget ?? user?.calorieTarget ?? 2200} tdee={data?.computedCalorieTarget?.tdeeUsed} />
               <div className={styles.calorieStats}>
                 <div className={styles.calStat}>
                   <span className={styles.calVal}>{Math.round(totals.calories)}</span>
