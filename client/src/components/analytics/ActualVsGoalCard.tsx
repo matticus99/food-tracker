@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import PeriodSelector from './PeriodSelector';
+import { toLocalDateStr } from '../../utils/date';
 import styles from './ChartCard.module.css';
 import cardStyles from './ActualVsGoalCard.module.css';
 
@@ -27,7 +28,7 @@ export default function ActualVsGoalCard({ data, calorieTarget }: Props) {
     if (!data.length) return [];
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    const cutoffStr = cutoff.toISOString().split('T')[0]!;
+    const cutoffStr = toLocalDateStr(cutoff);
     return data
       .filter(p => p.date >= cutoffStr)
       .map(p => ({

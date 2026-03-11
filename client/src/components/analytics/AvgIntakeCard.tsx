@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import PeriodSelector from './PeriodSelector';
+import { toLocalDateStr } from '../../utils/date';
 import styles from './ChartCard.module.css';
 
 interface IntakePoint {
@@ -22,7 +23,7 @@ export default function AvgIntakeCard({ data, calorieTarget }: Props) {
     if (!data.length) return [];
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
-    const cutoffStr = cutoff.toISOString().split('T')[0]!;
+    const cutoffStr = toLocalDateStr(cutoff);
     return data.filter(p => p.date >= cutoffStr);
   }, [data, days]);
 

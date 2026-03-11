@@ -2,13 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TdeeCard from './TdeeCard';
+import { toLocalDateStr } from '../../utils/date';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function daysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().split('T')[0]!;
+  return toLocalDateStr(d);
 }
 
 // ── Test data ───────────────────────────────────────────────────────────────

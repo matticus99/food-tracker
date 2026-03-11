@@ -1,8 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-
-function toDateStr(d: Date): string {
-  return d.toISOString().split('T')[0]!;
-}
+import { toLocalDateStr } from '../utils/date';
 
 interface DateContextValue {
   date: Date;
@@ -18,8 +15,8 @@ const DateContext = createContext<DateContextValue | null>(null);
 
 export function DateProvider({ children }: { children: ReactNode }) {
   const [date, setDateRaw] = useState(() => new Date());
-  const dateStr = toDateStr(date);
-  const todayStr = toDateStr(new Date());
+  const dateStr = toLocalDateStr(date);
+  const todayStr = toLocalDateStr(new Date());
   const isToday = dateStr === todayStr;
 
   const setDate = useCallback((d: Date) => setDateRaw(d), []);

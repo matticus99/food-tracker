@@ -4,6 +4,7 @@ import { db } from '../db/connection.js';
 import { foods, dailyIntake, weightLog, tdeeHistory } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { AppError } from '../middleware/errorHandler.js';
+import { toLocalDateStr } from '../utils/date.js';
 
 const MAX_ROWS_PER_SHEET = 5000;
 
@@ -56,7 +57,7 @@ function sheetToRows(worksheet: ExcelJS.Worksheet): Record<string, unknown>[] {
 function parseDate(raw: unknown): string | null {
   if (!raw) return null;
   if (typeof raw === 'number') return excelDateToISO(raw);
-  if (raw instanceof Date) return raw.toISOString().split('T')[0]!;
+  if (raw instanceof Date) return toLocalDateStr(raw);
   return String(raw);
 }
 

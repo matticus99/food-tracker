@@ -1,15 +1,12 @@
 import { useMemo } from 'react';
 import { useDate } from '../../context/DateContext';
+import { toLocalDateStr } from '../../utils/date';
 import styles from './WeekStrip.module.css';
 
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 interface Props {
   datesWithData?: Set<string>;
-}
-
-function toDateStr(d: Date): string {
-  return d.toISOString().split('T')[0]!;
 }
 
 export default function WeekStrip({ datesWithData }: Props) {
@@ -28,13 +25,13 @@ export default function WeekStrip({ datesWithData }: Props) {
     });
   }, [date]);
 
-  const todayStr = toDateStr(new Date());
-  const selectedStr = toDateStr(date);
+  const todayStr = toLocalDateStr(new Date());
+  const selectedStr = toLocalDateStr(date);
 
   return (
     <div className={styles.strip}>
       {week.map((wd, i) => {
-        const ds = toDateStr(wd);
+        const ds = toLocalDateStr(wd);
         const isSelected = ds === selectedStr;
         const isToday = ds === todayStr;
         const hasData = datesWithData?.has(ds);
