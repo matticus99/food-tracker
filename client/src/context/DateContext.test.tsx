@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { DateProvider, useDate } from './DateContext';
+import { toLocalDateStr } from '../utils/date';
 import type { ReactNode } from 'react';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -9,9 +10,7 @@ function wrapper({ children }: { children: ReactNode }) {
   return <DateProvider>{children}</DateProvider>;
 }
 
-function formatYMD(d: Date): string {
-  return d.toISOString().split('T')[0]!;
-}
+const formatYMD = toLocalDateStr;
 
 afterEach(() => {
   vi.restoreAllMocks();

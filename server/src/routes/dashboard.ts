@@ -9,12 +9,7 @@ import { getComputedCalorieTarget } from '../services/calorieTarget.js';
 
 const router = Router();
 
-function daysAgo(days: number): string {
-  const now = new Date();
-  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-  d.setUTCDate(d.getUTCDate() - days);
-  return d.toISOString().split('T')[0]!;
-}
+import { daysAgo } from '../utils/date.js';
 
 // GET /api/dashboard?date=YYYY-MM-DD
 // Returns all data needed for DashboardView in a single response

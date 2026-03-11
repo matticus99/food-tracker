@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WeekStrip from './WeekStrip';
 import { DateProvider } from '../../context/DateContext';
+import { toLocalDateStr } from '../../utils/date';
 
 function renderWithDate(ui: React.ReactElement) {
   return render(<DateProvider>{ui}</DateProvider>);
@@ -64,7 +65,7 @@ describe('WeekStrip', () => {
 
   it('shows dots for dates with data', () => {
     const today = new Date();
-    const dateStr = today.toISOString().split('T')[0]!;
+    const dateStr = toLocalDateStr(today);
     const datesWithData = new Set([dateStr]);
 
     const { container } = renderWithDate(<WeekStrip datesWithData={datesWithData} />);

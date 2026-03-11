@@ -9,12 +9,7 @@ import { daysQuerySchema } from '../validation/schemas.js';
 
 const router = Router();
 
-function daysAgo(days: number): string {
-  const now = new Date();
-  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-  d.setUTCDate(d.getUTCDate() - days);
-  return d.toISOString().split('T')[0]!;
-}
+import { daysAgo } from '../utils/date.js';
 
 // ── Shared helper: get daily intake data (Fix 4) ──
 async function getDailyIntakeData(userId: string, fromDate: string) {
