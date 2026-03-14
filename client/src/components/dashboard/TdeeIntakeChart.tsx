@@ -41,7 +41,7 @@ export default function TdeeIntakeChart({ data, avgTdee, avgIntake }: Props) {
     );
   }
 
-  const allVals = data.flatMap((d) => [d.tdee ?? 0, d.intake ?? 0]).filter(Boolean);
+  const allVals = data.flatMap((d) => [d.tdee, d.intake]).filter((v): v is number => v != null);
   const minVal = Math.min(...allVals) * 0.95;
   const maxVal = Math.max(...allVals) * 1.05;
   const range = maxVal - minVal || 1;
