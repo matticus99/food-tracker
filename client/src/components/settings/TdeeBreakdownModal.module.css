@@ -1,0 +1,410 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-base);
+  z-index: 300;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  animation: fadeIn 0.3s var(--ease-out);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.container {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: var(--space-md) var(--space-md) calc(var(--bottomnav-height) + var(--space-xl));
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) 0 var(--space-lg);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.closeBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.closeBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ── Hero result card ── */
+.heroCard {
+  background: linear-gradient(135deg, var(--accent-indigo), var(--accent-violet));
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+  margin-bottom: var(--space-lg);
+  animation: slideUp 0.4s var(--ease-out) 0.05s both;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.25);
+}
+
+.heroLabel {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-xs);
+}
+
+.heroValue {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.heroUnit {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Step cards ── */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.step {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  animation: slideUp 0.4s var(--ease-out) both;
+}
+
+.stepHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+}
+
+.stepNumber {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.stepTitle {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stepBody {
+  padding: 0 var(--space-md) var(--space-md);
+}
+
+.stepDesc {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+  margin-bottom: var(--space-sm);
+}
+
+/* ── Formula display ── */
+.formula {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+}
+
+.formulaHighlight {
+  color: var(--accent-indigo-light);
+  font-weight: 600;
+}
+
+/* ── Data rows ── */
+.dataRows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dataRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+}
+
+.dataRow:nth-child(odd) {
+  background: var(--bg-elevated);
+}
+
+.dataLabel {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.dataValue {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── Result row (bold, colored) ── */
+.resultRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-xs);
+}
+
+.resultLabel {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.resultValue {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* ── Comparison bar ── */
+.comparisonBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-sm);
+}
+
+.barTrack {
+  flex: 1;
+  height: 8px;
+  background: var(--progress-track);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s var(--ease-out);
+}
+
+.barLabel {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* ── Source badge ── */
+.sourceBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sourceBadge.adaptive {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--accent-emerald);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.sourceBadge.estimated {
+  background: rgba(249, 115, 22, 0.12);
+  color: var(--accent-orange);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+}
+
+.dot.adaptive {
+  background: var(--accent-emerald);
+}
+
+.dot.estimated {
+  background: var(--accent-orange);
+}
+
+/* ── TDEE mini chart ── */
+.miniChart {
+  height: 80px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: var(--space-sm) var(--space-md);
+}
+
+.chartBar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  min-height: 4px;
+  transition: height 0.4s var(--ease-out);
+}
+
+.chartLabels {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px var(--space-md) 0;
+}
+
+.chartDate {
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+}
+
+/* ── Equation display ── */
+.equation {
+  text-align: center;
+  padding: var(--space-sm) var(--space-md);
+  margin-top: var(--space-xs);
+}
+
+.equationParts {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.eqValue {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.eqOperator {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.eqLabel {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+.eqBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Info note ── */
+.infoNote {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(99, 102, 241, 0.06);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  margin-top: var(--space-sm);
+}
+
+.infoIcon {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.infoText {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ── No data state ── */
+.noData {
+  text-align: center;
+  padding: var(--space-lg) var(--space-md);
+  color: var(--text-tertiary);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+}
+
+.noDataIcon {
+  font-size: 2rem;
+  margin-bottom: var(--space-sm);
+  opacity: 0.5;
+}

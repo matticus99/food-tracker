@@ -3,6 +3,7 @@ import PageHeader from '../components/layout/PageHeader';
 import SettingsGroup from '../components/settings/SettingsGroup';
 import SettingsField from '../components/settings/SettingsField';
 import ImportSection from '../components/settings/ImportSection';
+import TdeeBreakdownModal from '../components/settings/TdeeBreakdownModal';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { useToast } from '../components/ui/Toast';
 import { useTheme } from '../context/ThemeContext';
@@ -62,6 +63,7 @@ export default function SettingsView() {
   const [form, setForm] = useState<Partial<FormData>>({});
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [showTdeeBreakdown, setShowTdeeBreakdown] = useState(false);
   const { toast } = useToast();
 
   const formRef = useRef<Partial<FormData>>({});
@@ -230,13 +232,18 @@ export default function SettingsView() {
                   </div>
                 </SettingsField>
                 {user?.computedCalorieTarget && (
-                  <div className={styles.targetBreakdown}>
+                  <button
+                    className={styles.targetBreakdown}
+                    onClick={() => setShowTdeeBreakdown(true)}
+                    type="button"
+                  >
                     {user.computedCalorieTarget.tdeeSource === 'adaptive' ? 'Adaptive' : 'Est.'} TDEE {user.computedCalorieTarget.tdeeUsed}
                     {user.computedCalorieTarget.objectiveOffset !== 0 && (
                       <> {user.computedCalorieTarget.objectiveOffset > 0 ? '+' : '−'} {Math.abs(user.computedCalorieTarget.objectiveOffset)} {user.computedCalorieTarget.objective}</>
                     )}
                     {' = '}{user.computedCalorieTarget.calorieTarget}
-                  </div>
+                    <span className={styles.breakdownHint}>Tap to see breakdown</span>
+                  </button>
                 )}
               </SettingsGroup>
             </div>
@@ -371,6 +378,10 @@ export default function SettingsView() {
 
         {saving && <div className={styles.saving}>Saving...</div>}
       </div>
+
+      {showTdeeBreakdown && (
+        <TdeeBreakdownModal onClose={() => setShowTdeeBreakdown(false)} />
+      )}
     </div>
   );
 }

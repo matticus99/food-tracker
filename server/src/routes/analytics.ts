@@ -291,4 +291,138 @@ router.get('/bmr', async (req, res, next) => {
   }
 });
 
+// GET /api/analytics/tdee-breakdown — detailed TDEE calculation breakdown
+router.get('/tdee-breakdown', async (req, res, next) => {
+  try {
+    const user = req.user;
+    const weight = Number(user.currentWeight);
+    const height = Number(user.heightInches);
+    const age = user.age;
+    const sex = user.sex;
+    const activityLevel = Number(user.activityLevel) || 1.25;
+    const smoothing = Number(user.tdeeSmoothingFactor) || 0.1;
+
+    // BMR calculation details
+    let bmrDetails = null;
+    if (weight && height && age && sex) {
+      const weightKg = Math.round(weight * 0.453592 * 10) / 10;
+      const heightCm = Math.round(height * 2.54 * 10) / 10;
+      const bmr = calculateBMR(weight, height, age, sex);
+      const estimatedTdee = Math.round(bmr * activityLevel);
+      bmrDetails = {
+        weightLbs: weight,
+        weightKg,
+        heightInches: height,
+        heightCm,
+        age,
+        sex,
+        bmr: Math.round(bmr),
+        activityLevel,
+        activityLabel: getActivityLabel(activityLevel),
+        estimatedTdee,
+      };
+    }
+
+    // Adaptive TDEE details
+    const fromDate = daysAgo(90);
+    const [tdeeRows, weightsRaw, intakeData] = await Promise.all([
+      db.select()
+        .from(tdeeHistory)
+        .where(and(eq(tdeeHistory.userId, req.userId), gte(tdeeHistory.date, fromDate)))
+        .orderBy(tdeeHistory.date),
+      db.select()
+        .from(weightLog)
+        .where(and(eq(weightLog.userId, req.userId), gte(weightLog.date, fromDate)))
+        .orderBy(weightLog.date),
+      getDailyIntakeData(req.userId, fromDate),
+    ]);
+
+    let adaptiveDetails = null;
+    let tdeeTimeline: { date: string; tdeeEstimate: number }[] = [];
+
+    if (tdeeRows.length > 0) {
+      const latest = tdeeRows[tdeeRows.length - 1]!;
+      tdeeTimeline = tdeeRows.map(h => ({
+        date: h.date,
+        tdeeEstimate: Number(h.tdeeEstimate),
+      }));
+      adaptiveDetails = {
+        latestValue: Math.round(Number(latest.tdeeEstimate)),
+        latestDate: latest.date,
+        dataPoints: tdeeRows.length,
+        dateRange: { from: tdeeRows[0]!.date, to: latest.date },
+        smoothingFactor: smoothing,
+      };
+    } else {
+      // Compute on-the-fly from weight + intake
+      const weightMap = new Map(weightsRaw.map(w => [w.date, Number(w.weight)]));
+      const dataPoints = intakeData
+        .filter(i => weightMap.has(i.date))
+        .map(i => ({
+          date: i.date,
+          weight: weightMap.get(i.date)!,
+          calories: i.calories,
+        }));
+
+      if (dataPoints.length > 1) {
+        const computed = calculateTdeeHistory(dataPoints, smoothing);
+        tdeeTimeline = computed.map(c => ({
+          date: c.date,
+          tdeeEstimate: c.tdeeEstimate,
+        }));
+        const latest = computed[computed.length - 1]!;
+        adaptiveDetails = {
+          latestValue: Math.round(latest.tdeeEstimate),
+          latestDate: latest.date,
+          dataPoints: computed.length,
+          dateRange: { from: computed[0]!.date, to: latest.date },
+          smoothingFactor: smoothing,
+        };
+      }
+    }
+
+    // Calorie target computation
+    const computedTarget = await getComputedCalorieTarget(user);
+
+    // Weight data summary
+    const weightSummary = weightsRaw.length > 0
+      ? {
+          entries: weightsRaw.length,
+          latest: Number(weightsRaw[weightsRaw.length - 1]!.weight),
+          earliest: Number(weightsRaw[0]!.weight),
+          dateRange: { from: weightsRaw[0]!.date, to: weightsRaw[weightsRaw.length - 1]!.date },
+        }
+      : null;
+
+    // Intake data summary
+    const intakeSummary = intakeData.length > 0
+      ? {
+          entries: intakeData.length,
+          avgCalories: Math.round(intakeData.reduce((s, i) => s + i.calories, 0) / intakeData.length),
+        }
+      : null;
+
+    res.json({
+      bmr: bmrDetails,
+      adaptive: adaptiveDetails,
+      tdeeTimeline,
+      target: computedTarget,
+      weightSummary,
+      intakeSummary,
+      objective: user.objective ?? 'maintain',
+      goalPace: user.goalPace ?? 500,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+function getActivityLabel(level: number): string {
+  if (level <= 1) return 'Sedentary';
+  if (level <= 1.15) return 'Lightly Active';
+  if (level <= 1.25) return 'Moderately Active';
+  if (level <= 1.4) return 'Active';
+  return 'Very Active';
+}
+
 export default router;

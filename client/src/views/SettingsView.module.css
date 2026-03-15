@@ -15,10 +15,30 @@
 }
 
 .targetBreakdown {
+  display: block;
+  width: 100%;
   font-size: 0.75rem;
-  color: var(--text-tertiary);
-  padding: 0 var(--space-md) var(--space-sm);
+  color: var(--accent-indigo-light, var(--accent-indigo));
+  padding: var(--space-xs) var(--space-md) var(--space-sm);
   font-family: var(--font-body);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+  line-height: 1.5;
+}
+
+.targetBreakdown:hover {
+  color: var(--accent-indigo);
+}
+
+.breakdownHint {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  opacity: 0.7;
 }
 
 .recalculateWrap {
