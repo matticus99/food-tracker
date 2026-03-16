@@ -122,8 +122,8 @@ export default function DashboardView() {
       intake: intakeMap.get(dt),
     }));
 
-    const tdeeVals = points.map((p) => p.tdee).filter(Boolean) as number[];
-    const intakeVals = points.map((p) => p.intake).filter(Boolean) as number[];
+    const tdeeVals = points.map((p) => p.tdee).filter((v): v is number => v != null);
+    const intakeVals = points.map((p) => p.intake).filter((v): v is number => v != null);
 
     return {
       points,
