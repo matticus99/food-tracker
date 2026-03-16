@@ -20,6 +20,7 @@ router.get('/', async (req, res, next) => {
     const user = req.user;
     const userId = req.userId;
     const fromDate7 = daysAgo(7);
+    const fromDate30 = daysAgo(30);
     const smoothing = Number(user.tdeeSmoothingFactor) || 0.1;
 
     // Run all queries in parallel
@@ -55,16 +56,16 @@ router.get('/', async (req, res, next) => {
         .where(and(eq(weightLog.userId, userId), gte(weightLog.date, date), lte(weightLog.date, date)))
         .orderBy(weightLog.date),
 
-      // TDEE history (last 7 days)
+      // TDEE history (last 30 days for chart)
       db.select()
         .from(tdeeHistory)
-        .where(and(eq(tdeeHistory.userId, userId), gte(tdeeHistory.date, fromDate7)))
+        .where(and(eq(tdeeHistory.userId, userId), gte(tdeeHistory.date, fromDate30)))
         .orderBy(tdeeHistory.date),
 
-      // Daily intake (last 7 days)
+      // Daily intake (last 30 days for chart)
       db.select()
         .from(dailyIntake)
-        .where(and(eq(dailyIntake.userId, userId), gte(dailyIntake.date, fromDate7)))
+        .where(and(eq(dailyIntake.userId, userId), gte(dailyIntake.date, fromDate30)))
         .orderBy(dailyIntake.date),
 
       // Computed calorie target (only needs user, runs in parallel)
@@ -83,7 +84,7 @@ router.get('/', async (req, res, next) => {
       // Calculate from raw data if no pre-computed history
       const weights = await db.select()
         .from(weightLog)
-        .where(and(eq(weightLog.userId, userId), gte(weightLog.date, fromDate7)))
+        .where(and(eq(weightLog.userId, userId), gte(weightLog.date, fromDate30)))
         .orderBy(weightLog.date);
 
       const weightMap = new Map(weights.map(w => [w.date, Number(w.weight)]));
@@ -113,7 +114,7 @@ router.get('/', async (req, res, next) => {
         .select({ date: foodLog.date, servings: foodLog.servings, calories: foods.calories })
         .from(foodLog)
         .innerJoin(foods, eq(foodLog.foodId, foods.id))
-        .where(and(eq(foodLog.userId, userId), gte(foodLog.date, fromDate7)))
+        .where(and(eq(foodLog.userId, userId), gte(foodLog.date, fromDate30)))
         .orderBy(foodLog.date);
 
       const byDate = new Map<string, { calories: number; protein: number; fat: number; carbs: number }>();
