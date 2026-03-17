@@ -8,7 +8,7 @@
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  padding: var(--space-lg) var(--space-md);
+  padding: calc(var(--space-lg) + var(--safe-area-top)) var(--space-md) var(--space-lg) calc(var(--space-md) + var(--safe-area-left));
   z-index: 100;
   transition: transform var(--transition-medium);
 }

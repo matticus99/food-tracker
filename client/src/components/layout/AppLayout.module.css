@@ -3,7 +3,7 @@
 }
 
 .main {
-  margin-left: var(--sidebar-width);
+  margin-left: calc(var(--sidebar-width) + var(--safe-area-left));
   min-height: 100vh;
   padding: var(--space-xl) var(--space-2xl);
   max-width: calc(var(--content-max-width) + var(--sidebar-width));
@@ -13,6 +13,6 @@
   .main {
     margin-left: 0;
     padding: var(--space-md) var(--space-md);
-    padding-bottom: calc(var(--bottomnav-height) + var(--space-md));
+    padding-bottom: calc(var(--bottomnav-height) + var(--safe-area-bottom) + var(--space-md));
   }
 }

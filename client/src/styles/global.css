@@ -14,6 +14,9 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -37,6 +40,13 @@ button {
 
 input, select, textarea {
   font-family: inherit;
+}
+
+/* Prevent iOS auto-zoom on input focus (targets Safari only) */
+@supports (-webkit-touch-callout: none) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* ═══════════════════════════════════════

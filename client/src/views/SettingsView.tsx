@@ -6,7 +6,7 @@ import ImportSection from '../components/settings/ImportSection';
 import TdeeBreakdownModal from '../components/settings/TdeeBreakdownModal';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { useToast } from '../components/ui/Toast';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, type TextSize } from '../context/ThemeContext';
 import { useApi, apiFetch } from '../hooks/useApi';
 import { CATEGORY_KEYS, DEFAULT_CATEGORY_LABELS, type CategoryConfig } from '../constants/categories';
 import styles from './SettingsView.module.css';
@@ -58,7 +58,7 @@ function pickFormData(user: User): FormData {
 }
 
 export default function SettingsView() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, textSize, setTextSize } = useTheme();
   const { data: user, loading, refetch } = useApi<User>('/user');
   const [form, setForm] = useState<Partial<FormData>>({});
   const [saving, setSaving] = useState(false);
@@ -319,6 +319,16 @@ export default function SettingsView() {
                   >
                     <option value="dark">Dark</option>
                     <option value="light">Light</option>
+                  </select>
+                </SettingsField>
+                <SettingsField label="Text Size">
+                  <select
+                    value={textSize}
+                    onChange={(e) => setTextSize(e.target.value as TextSize)}
+                  >
+                    <option value="small">Small</option>
+                    <option value="default">Default</option>
+                    <option value="large">Large</option>
                   </select>
                 </SettingsField>
               </SettingsGroup>
