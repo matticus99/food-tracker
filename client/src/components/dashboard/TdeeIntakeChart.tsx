@@ -115,8 +115,8 @@ export default function TdeeIntakeChart({ data, avgTdee, avgIntake, targetCalori
               y1={PAD_Y}
               x2={x}
               y2={HEIGHT - PAD_Y}
-              stroke="var(--border-subtle)"
-              strokeWidth="0.5"
+              stroke="var(--text-tertiary)"
+              strokeWidth="1"
               opacity="0.5"
             />
           );
