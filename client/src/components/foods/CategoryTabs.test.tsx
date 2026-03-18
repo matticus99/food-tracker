@@ -13,6 +13,7 @@ describe('CategoryTabs', () => {
   it('renders category tabs', () => {
     render(<CategoryTabs active="" onChange={vi.fn()} />);
 
+    expect(screen.getByText('Favorites')).toBeInTheDocument();
     expect(screen.getByText('Proteins')).toBeInTheDocument();
     expect(screen.getByText('Grains')).toBeInTheDocument();
     expect(screen.getByText('Vegetables')).toBeInTheDocument();
@@ -20,7 +21,6 @@ describe('CategoryTabs', () => {
     expect(screen.getByText('Dairy')).toBeInTheDocument();
     expect(screen.getByText('Snacks')).toBeInTheDocument();
     expect(screen.getByText('Drinks')).toBeInTheDocument();
-    expect(screen.getByText('Other')).toBeInTheDocument();
   });
 
   it('active tab is highlighted', () => {

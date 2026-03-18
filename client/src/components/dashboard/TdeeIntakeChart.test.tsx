@@ -108,4 +108,54 @@ describe('TdeeIntakeChart', () => {
     const svg = container.querySelector('svg');
     expect(svg).toBeInTheDocument();
   });
+
+  it('renders target stat when targetCalories is provided', () => {
+    const data = [
+      { date: '2025-01-01', tdee: 2200, intake: 1800 },
+      { date: '2025-01-02', tdee: 2300, intake: 2000 },
+    ];
+    render(
+      <TdeeIntakeChart data={data} avgTdee={2250} avgIntake={1900} targetCalories={2000} />
+    );
+
+    const targetLabels = screen.getAllByText('Target');
+    expect(targetLabels.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('2000')).toBeInTheDocument();
+  });
+
+  it('does not render target stat when targetCalories is undefined', () => {
+    const data = [
+      { date: '2025-01-01', tdee: 2200, intake: 1800 },
+    ];
+    render(
+      <TdeeIntakeChart data={data} avgTdee={2200} avgIntake={1800} />
+    );
+
+    expect(screen.queryByText('Target')).not.toBeInTheDocument();
+  });
+
+  it('renders target legend item when targetCalories is provided', () => {
+    const data = [
+      { date: '2025-01-01', tdee: 2200, intake: 1800 },
+    ];
+    const { container } = render(
+      <TdeeIntakeChart data={data} avgTdee={2200} avgIntake={1800} targetCalories={2000} />
+    );
+
+    const legendItems = container.querySelectorAll('[class*="legendItem"]');
+    expect(legendItems.length).toBe(3);
+  });
+
+  it('renders dashed target line in SVG', () => {
+    const data = [
+      { date: '2025-01-01', tdee: 2200, intake: 1800 },
+      { date: '2025-01-02', tdee: 2300, intake: 2000 },
+    ];
+    const { container } = render(
+      <TdeeIntakeChart data={data} avgTdee={2250} avgIntake={1900} targetCalories={2000} />
+    );
+
+    const dashedLine = container.querySelector('line[stroke-dasharray]');
+    expect(dashedLine).toBeInTheDocument();
+  });
 });

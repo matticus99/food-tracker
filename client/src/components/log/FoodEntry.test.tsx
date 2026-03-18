@@ -35,10 +35,11 @@ describe('FoodEntry', () => {
     expect(screen.getByText('165')).toBeInTheDocument();
   });
 
-  it('shows serving multiplier when servings !== 1', () => {
+  it('shows total grams when servings !== 1', () => {
     render(<FoodEntry {...defaultProps} servings={2} />);
 
-    expect(screen.getByText('2\u00d7 100g')).toBeInTheDocument();
+    // formatServingDisplay calculates total grams: 2 * 100 = 200g
+    expect(screen.getByText('200g')).toBeInTheDocument();
   });
 
   it('hides serving multiplier when servings === 1', () => {
@@ -60,8 +61,8 @@ describe('FoodEntry', () => {
     expect(handleDelete).toHaveBeenCalledWith('entry-1');
   });
 
-  it('renders serving label', () => {
-    render(<FoodEntry {...defaultProps} servingLabel="1 cup" />);
+  it('renders serving label when no servingGrams', () => {
+    render(<FoodEntry {...defaultProps} servingLabel="1 cup" servingGrams={null} />);
 
     expect(screen.getByText('1 cup')).toBeInTheDocument();
   });

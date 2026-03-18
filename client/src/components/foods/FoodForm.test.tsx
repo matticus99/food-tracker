@@ -58,12 +58,13 @@ describe('FoodForm', () => {
     expect(screen.getByText('Edit Food')).toBeInTheDocument();
   });
 
-  it('renders form fields: Name, Category, Serving, Calories, Protein, Fat, Carbs', () => {
+  it('renders form fields: Name, Category, Serving Label, Serving Size, Calories, Protein, Fat, Carbs', () => {
     render(<FoodForm {...defaultProps} />);
 
     expect(screen.getByText('Name')).toBeInTheDocument();
     expect(screen.getByText('Category')).toBeInTheDocument();
-    expect(screen.getByText('Serving')).toBeInTheDocument();
+    expect(screen.getByText('Serving Label')).toBeInTheDocument();
+    expect(screen.getByText('Serving Size')).toBeInTheDocument();
     expect(screen.getByText('Calories')).toBeInTheDocument();
     expect(screen.getByText('Protein (g)')).toBeInTheDocument();
     expect(screen.getByText('Fat (g)')).toBeInTheDocument();
@@ -132,7 +133,7 @@ describe('FoodForm', () => {
   it('renders category dropdown with options', () => {
     render(<FoodForm {...defaultProps} />);
 
-    const select = screen.getByDisplayValue('Other');
+    const select = screen.getByDisplayValue('Favorites');
     expect(select).toBeInTheDocument();
     expect(select.tagName).toBe('SELECT');
   });

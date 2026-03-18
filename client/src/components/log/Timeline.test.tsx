@@ -26,12 +26,14 @@ const makeEntry = (
 });
 
 describe('Timeline', () => {
-  it('renders default meal times (7 AM, 12 PM, 6 PM)', () => {
+  it('renders 2-hour increment time slots (6 AM to 10 PM)', () => {
     render(<Timeline entries={[]} onDelete={vi.fn()} onEdit={vi.fn()} onAddAtHour={vi.fn()} />);
 
-    expect(screen.getByText('7 AM')).toBeInTheDocument();
+    expect(screen.getByText('6 AM')).toBeInTheDocument();
+    expect(screen.getByText('8 AM')).toBeInTheDocument();
     expect(screen.getByText('12 PM')).toBeInTheDocument();
     expect(screen.getByText('6 PM')).toBeInTheDocument();
+    expect(screen.getByText('10 PM')).toBeInTheDocument();
   });
 
   it('renders food entries at the correct hour', () => {
@@ -64,10 +66,11 @@ describe('Timeline', () => {
   it('renders add buttons for each time slot', () => {
     render(<Timeline entries={[]} onDelete={vi.fn()} onEdit={vi.fn()} onAddAtHour={vi.fn()} />);
 
-    // Default hours: 7, 12, 18
-    expect(screen.getByLabelText('Add food at 7 AM')).toBeInTheDocument();
+    // 2-hour increment slots: 6, 8, 10, 12, 14, 16, 18, 20, 22
+    expect(screen.getByLabelText('Add food at 6 AM')).toBeInTheDocument();
     expect(screen.getByLabelText('Add food at 12 PM')).toBeInTheDocument();
     expect(screen.getByLabelText('Add food at 6 PM')).toBeInTheDocument();
+    expect(screen.getByLabelText('Add food at 10 PM')).toBeInTheDocument();
   });
 
   it('clicking add button calls onAddAtHour with correct hour', async () => {

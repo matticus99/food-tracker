@@ -9,9 +9,10 @@ const mockFoods = [
   {
     id: 'f1',
     name: 'Chicken Breast',
-    emoji: '\ud83c\udf57',
+    emoji: '🍗',
     category: 'proteins',
     servingLabel: '100g',
+    servingGrams: null,
     calories: '165',
     protein: '31',
     fat: '3.6',
@@ -20,9 +21,10 @@ const mockFoods = [
   {
     id: 'f2',
     name: 'Brown Rice',
-    emoji: '\ud83c\udf5a',
+    emoji: '🍚',
     category: 'grains',
     servingLabel: '1 cup',
+    servingGrams: null,
     calories: '216',
     protein: '5',
     fat: '1.8',
@@ -87,7 +89,6 @@ describe('AddFoodModal', () => {
     render(<AddFoodModal {...defaultProps} />);
 
     await waitFor(() => {
-      // "100g" is embedded in "100g · 165 cal" so use substring matcher
       expect(screen.getByText(/100g/)).toBeInTheDocument();
     });
   });
@@ -108,7 +109,7 @@ describe('AddFoodModal', () => {
     });
   });
 
-  it('clicking a food shows confirmation view', async () => {
+  it('clicking a food toggles selection (shows checkmark)', async () => {
     const user = userEvent.setup();
     render(<AddFoodModal {...defaultProps} />);
 
@@ -116,14 +117,15 @@ describe('AddFoodModal', () => {
       expect(screen.getByText('Chicken Breast')).toBeInTheDocument();
     });
 
+    // Click to select
     await user.click(screen.getByText('Chicken Breast'));
 
-    // Should now show servings input and Add button
-    expect(screen.getByText('Add')).toBeInTheDocument();
-    expect(screen.getByText('Back')).toBeInTheDocument();
+    // Should show a checkmark and Save button
+    expect(screen.getByText('✓')).toBeInTheDocument();
+    expect(screen.getByText(/Save 1 food/)).toBeInTheDocument();
   });
 
-  it('shows macro preview after selecting a food', async () => {
+  it('clicking a selected food deselects it', async () => {
     const user = userEvent.setup();
     render(<AddFoodModal {...defaultProps} />);
 
@@ -131,13 +133,15 @@ describe('AddFoodModal', () => {
       expect(screen.getByText('Chicken Breast')).toBeInTheDocument();
     });
 
+    // Select then deselect
     await user.click(screen.getByText('Chicken Breast'));
+    expect(screen.getByText(/Save 1 food/)).toBeInTheDocument();
 
-    // Shows calorie info for 1 serving
-    expect(screen.getByText('165 cal')).toBeInTheDocument();
+    await user.click(screen.getByText('Chicken Breast'));
+    expect(screen.queryByText(/Save/)).not.toBeInTheDocument();
   });
 
-  it('clicking Back returns to food list', async () => {
+  it('can select multiple foods', async () => {
     const user = userEvent.setup();
     render(<AddFoodModal {...defaultProps} />);
 
@@ -146,12 +150,9 @@ describe('AddFoodModal', () => {
     });
 
     await user.click(screen.getByText('Chicken Breast'));
-    expect(screen.getByText('Back')).toBeInTheDocument();
+    await user.click(screen.getByText('Brown Rice'));
 
-    await user.click(screen.getByText('Back'));
-
-    // Should be back at the search view
-    expect(screen.getByPlaceholderText('Search foods...')).toBeInTheDocument();
+    expect(screen.getByText(/Save 2 foods/)).toBeInTheDocument();
   });
 
   it('calls onClose when overlay is clicked', async () => {
@@ -169,8 +170,7 @@ describe('AddFoodModal', () => {
     const handleClose = vi.fn();
     render(<AddFoodModal {...defaultProps} onClose={handleClose} />);
 
-    // The close button has '×' text
-    await user.click(screen.getByText('\u00d7'));
+    await user.click(screen.getByText('×'));
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
@@ -188,7 +188,7 @@ describe('AddFoodModal', () => {
     expect(screen.getByText(/6 PM/)).toBeInTheDocument();
   });
 
-  it('submits with correct payload when Add is clicked', async () => {
+  it('submits batch payload when Save is clicked', async () => {
     const user = userEvent.setup();
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
@@ -211,16 +211,19 @@ describe('AddFoodModal', () => {
     });
 
     await user.click(screen.getByText('Chicken Breast'));
-    await user.click(screen.getByText('Add'));
+    await user.click(screen.getByText(/Save 1 food/));
 
     await waitFor(() => {
       expect(handleAdded).toHaveBeenCalledTimes(1);
     });
     expect(handleClose).toHaveBeenCalledTimes(1);
 
-    // Should have made a POST to /api/log
+    // Should have made a POST to /api/log/batch
     const postCall = fetchSpy.mock.calls.find(
-      (call: unknown[]) => call[0] === '/api/log' && (call[1] as Record<string, unknown>)?.method === 'POST',
+      (call: unknown[]) =>
+        typeof call[0] === 'string' &&
+        call[0].includes('/log/batch') &&
+        (call[1] as Record<string, unknown>)?.method === 'POST',
     );
     expect(postCall).toBeDefined();
   });
