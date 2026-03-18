@@ -10,6 +10,7 @@ interface Props {
   data: DataPoint[];
   avgTdee: number;
   avgIntake: number;
+  targetCalories?: number;
 }
 
 const WIDTH = 320;
@@ -28,7 +29,7 @@ function buildArea(points: { x: number; y: number }[], baseY: number): string {
   return `${path} L${points[points.length - 1]!.x},${baseY} L${points[0]!.x},${baseY} Z`;
 }
 
-export default function TdeeIntakeChart({ data, avgTdee, avgIntake }: Props) {
+export default function TdeeIntakeChart({ data, avgTdee, avgIntake, targetCalories }: Props) {
   if (data.length === 0) {
     return (
       <div className={styles.card}>
@@ -42,6 +43,7 @@ export default function TdeeIntakeChart({ data, avgTdee, avgIntake }: Props) {
   }
 
   const allVals = data.flatMap((d) => [d.tdee, d.intake]).filter((v): v is number => v != null);
+  if (targetCalories != null) allVals.push(targetCalories);
   const minVal = Math.min(...allVals) * 0.95;
   const maxVal = Math.max(...allVals) * 1.05;
   const range = maxVal - minVal || 1;
@@ -78,6 +80,15 @@ export default function TdeeIntakeChart({ data, avgTdee, avgIntake }: Props) {
             {Math.round(avgIntake)}
           </span>
         </div>
+        {targetCalories != null && (
+          <div className={styles.stat}>
+            <span className={styles.statDot} style={{ background: 'var(--accent-emerald)' }} />
+            <span className={styles.statLabel}>Target</span>
+            <span className={styles.statVal} style={{ color: 'var(--accent-emerald)' }}>
+              {Math.round(targetCalories)}
+            </span>
+          </div>
+        )}
       </div>
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -94,6 +105,35 @@ export default function TdeeIntakeChart({ data, avgTdee, avgIntake }: Props) {
             <stop offset="100%" stopColor="var(--accent-indigo)" stopOpacity="0.02" />
           </linearGradient>
         </defs>
+        {/* Day divider lines */}
+        {data.map((_, i) => {
+          const x = toX(i);
+          return (
+            <line
+              key={`div-${i}`}
+              x1={x}
+              y1={PAD_Y}
+              x2={x}
+              y2={HEIGHT - PAD_Y}
+              stroke="var(--border-subtle)"
+              strokeWidth="0.5"
+              opacity="0.5"
+            />
+          );
+        })}
+        {/* Target calorie line */}
+        {targetCalories != null && (
+          <line
+            x1={PAD_X}
+            y1={toY(targetCalories)}
+            x2={WIDTH - PAD_X}
+            y2={toY(targetCalories)}
+            stroke="var(--accent-emerald)"
+            strokeWidth="1.5"
+            strokeDasharray="4 3"
+            opacity="0.8"
+          />
+        )}
         {tdeePoints.length > 0 && (
           <>
             <path d={buildArea(tdeePoints, HEIGHT)} fill="url(#tdeeFill)" />
@@ -126,6 +166,12 @@ export default function TdeeIntakeChart({ data, avgTdee, avgIntake }: Props) {
           <span className={styles.legendLine} style={{ background: 'var(--accent-indigo)' }} />
           Intake
         </span>
+        {targetCalories != null && (
+          <span className={styles.legendItem}>
+            <span className={styles.legendDash} />
+            Target
+          </span>
+        )}
       </div>
     </div>
   );

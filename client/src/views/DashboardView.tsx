@@ -210,6 +210,7 @@ export default function DashboardView() {
                   data={chartData.points}
                   avgTdee={chartData.avgTdee}
                   avgIntake={chartData.avgIntake}
+                  targetCalories={data?.computedCalorieTarget?.calorieTarget}
                 />
               </div>
             ) : (
