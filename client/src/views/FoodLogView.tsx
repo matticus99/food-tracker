@@ -7,7 +7,6 @@ import AddFoodModal from '../components/log/AddFoodModal';
 import EditFoodModal from '../components/log/EditFoodModal';
 import type { EditEntry } from '../components/log/EditFoodModal';
 import { Skeleton } from '../components/ui/Skeleton';
-import EmptyState from '../components/ui/EmptyState';
 import { useToast } from '../components/ui/Toast';
 import { useDate } from '../context/DateContext';
 import { useApi, apiFetch } from '../hooks/useApi';
@@ -104,7 +103,6 @@ export default function FoodLogView() {
   }, [refetch, toast]);
 
   const isLoading = loading && !entries;
-  const isEmpty = entries && entries.length === 0;
 
   return (
     <div className={viewStyles.view}>

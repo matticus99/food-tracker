@@ -1,63 +1,165 @@
-.timeline {
-  position: relative;
-  padding-left: 72px;
-}
-
-.line {
-  position: absolute;
-  left: 52px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--border-subtle);
-}
-
-.slot {
-  position: relative;
-  padding: var(--space-sm) 0;
-  min-height: 48px;
-}
-
-.timeLabel {
-  position: absolute;
-  left: -72px;
-  top: var(--space-sm);
-  width: 48px;
-  font-family: var(--font-display);
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--text-tertiary);
-  text-align: right;
-}
-
-.timeLabel.active {
-  color: var(--accent-indigo);
-  font-weight: 600;
-}
-
-.content {
+.cardList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: var(--space-md);
+  padding-top: var(--space-sm);
+}
+
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cardHeaderLeft {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.cardLabel {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cardRange {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+}
+
+.cardHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cardCals {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.cardCals::after {
+  content: ' cal';
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: var(--text-tertiary);
 }
 
 .addBtn {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 1px dashed var(--border-default);
+  border: 1.5px solid var(--border-default);
   background: none;
   color: var(--text-tertiary);
-  font-size: 1rem;
+  font-size: 0.9rem;
+  line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .addBtn:hover {
   border-color: var(--accent-indigo);
   color: var(--accent-indigo);
   background: rgba(99, 102, 241, 0.08);
+}
+
+.cardEntries {
+  display: flex;
+  flex-direction: column;
+}
+
+.cardEntries > *:not(:last-child) {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ── Time-of-day gradients ── */
+
+.card .cardHeader {
+  position: relative;
+}
+
+.card .cardHeader::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+/* Early Morning — deep indigo/navy, darkest */
+.card[data-time="early-morning"] .cardHeader::before {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #3730a3 100%);
+}
+.card[data-time="early-morning"] {
+  border-color: rgba(99, 102, 241, 0.15);
+}
+
+/* Morning — warm amber sunrise */
+.card[data-time="morning"] .cardHeader::before {
+  background: linear-gradient(135deg, #92400e 0%, #d97706 40%, #fbbf24 100%);
+}
+.card[data-time="morning"] {
+  border-color: rgba(251, 191, 36, 0.15);
+}
+
+/* Midday — bright warm golden, lightest */
+.card[data-time="midday"] .cardHeader::before {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 40%, #fde68a 100%);
+  opacity: 0.18;
+}
+.card[data-time="midday"] {
+  border-color: rgba(253, 230, 138, 0.18);
+}
+
+/* Afternoon — warm orange, starting to fade */
+.card[data-time="afternoon"] .cardHeader::before {
+  background: linear-gradient(135deg, #ea580c 0%, #f97316 40%, #fb923c 100%);
+}
+.card[data-time="afternoon"] {
+  border-color: rgba(249, 115, 22, 0.15);
+}
+
+/* Evening — sunset rose/purple */
+.card[data-time="evening"] .cardHeader::before {
+  background: linear-gradient(135deg, #9f1239 0%, #be185d 40%, #c084fc 100%);
+}
+.card[data-time="evening"] {
+  border-color: rgba(190, 24, 93, 0.12);
+}
+
+/* Night — deep blue/slate, darkest */
+.card[data-time="night"] .cardHeader::before {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #334155 100%);
+}
+.card[data-time="night"] {
+  border-color: rgba(51, 65, 85, 0.2);
+}
+
+/* Light theme: increase gradient visibility */
+[data-theme="light"] .card .cardHeader::before {
+  opacity: 0.08;
+}
+[data-theme="light"] .card[data-time="midday"] .cardHeader::before {
+  opacity: 0.12;
 }
