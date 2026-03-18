@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import PeriodSelector from './PeriodSelector';
 import { toLocalDateStr } from '../../utils/date';
 import styles from './ChartCard.module.css';
@@ -21,15 +21,13 @@ function buildPath(points: { x: number; y: number }[]): string {
 }
 
 export default function TdeeCard({ data }: Props) {
-  const [days, setDays] = useState(14);
-
   const points = useMemo(() => {
     if (!data.length) return [];
     const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
+    cutoff.setDate(cutoff.getDate() - 30);
     const cutoffStr = toLocalDateStr(cutoff);
     return data.filter(p => p.date >= cutoffStr);
-  }, [data, days]);
+  }, [data]);
 
   const latest = points.length > 0 ? Math.round(points[points.length - 1]!.tdeeEstimate) : null;
 
@@ -49,7 +47,7 @@ export default function TdeeCard({ data }: Props) {
     <div className={styles.card}>
       <div className={styles.header}>
         <span className={styles.title}>TDEE</span>
-        <PeriodSelector periods={[7, 14, 30]} active={days} onChange={setDays} />
+        <PeriodSelector periods={[30]} active={30} onChange={() => {}} />
       </div>
       {latest != null ? (
         <>

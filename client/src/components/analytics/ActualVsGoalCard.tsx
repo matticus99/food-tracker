@@ -95,8 +95,8 @@ export default function ActualVsGoalCard({ data, calorieTarget }: Props) {
                 fill={points[i]!.diff > 0 ? 'var(--accent-orange)' : 'var(--accent-emerald)'}
               />
             ))}
-            {/* Day labels */}
-            {dayLabels.map((label, i) => (
+            {/* Day labels (hidden at 30d to avoid clutter) */}
+            {days !== 30 && dayLabels.map((label, i) => (
               <text
                 key={i}
                 x={plotPoints[i]?.x ?? 0}
