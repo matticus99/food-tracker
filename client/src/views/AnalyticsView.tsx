@@ -32,6 +32,7 @@ interface BmrData {
   bmr: number;
   activityLevel: number;
   estimatedTdee: number;
+  adaptiveTdee: number | null;
   calorieTarget: number;
 }
 

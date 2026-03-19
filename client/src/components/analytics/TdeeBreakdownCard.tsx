@@ -5,6 +5,7 @@ interface BmrData {
   bmr: number;
   activityLevel: number;
   estimatedTdee: number;
+  adaptiveTdee: number | null;
   calorieTarget: number;
 }
 
@@ -22,10 +23,13 @@ export default function TdeeBreakdownCard({ data }: Props) {
     );
   }
 
+  const tdeeValue = data.adaptiveTdee ?? data.estimatedTdee;
+  const tdeeLabel = data.adaptiveTdee != null ? 'TDEE' : 'Est. TDEE';
+
   const stats = [
     { label: 'BMR', value: `${data.bmr}`, unit: 'cal' },
     { label: 'Activity', value: `${data.activityLevel}×`, unit: '' },
-    { label: 'Est. TDEE', value: `${data.estimatedTdee}`, unit: 'cal' },
+    { label: tdeeLabel, value: `${tdeeValue}`, unit: 'cal' },
     { label: 'Target', value: `${data.calorieTarget}`, unit: 'cal' },
   ];
 

@@ -56,22 +56,46 @@ export default function AvgIntakeCard({ data, calorieTarget }: Props) {
               strokeDasharray="4 3"
               opacity="0.5"
             />
-            {/* Bars */}
+            {/* Area fill */}
+            {points.length > 1 && (
+              <path
+                d={
+                  points.map((p, i) => {
+                    const x = (i / (points.length - 1)) * W;
+                    const y = H - (p.calories / maxVal) * H;
+                    return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+                  }).join(' ') + ` L${W},${H} L0,${H} Z`
+                }
+                fill="var(--accent-indigo)"
+                opacity={0.15}
+              />
+            )}
+            {/* Line */}
+            {points.length > 1 && (
+              <polyline
+                points={points.map((p, i) => {
+                  const x = (i / (points.length - 1)) * W;
+                  const y = H - (p.calories / maxVal) * H;
+                  return `${x},${y}`;
+                }).join(' ')}
+                fill="none"
+                stroke="var(--accent-indigo)"
+                strokeWidth="2"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            )}
+            {/* Dots */}
             {points.map((p, i) => {
-              const barW = (W / points.length) * 0.6;
-              const gap = (W / points.length) * 0.4;
-              const x = i * (barW + gap) + gap / 2;
-              const barH = (p.calories / maxVal) * H;
+              const x = points.length > 1 ? (i / (points.length - 1)) * W : W / 2;
+              const y = H - (p.calories / maxVal) * H;
               return (
-                <rect
+                <circle
                   key={p.date}
-                  x={x}
-                  y={H - barH}
-                  width={barW}
-                  height={barH}
-                  rx={2}
+                  cx={x}
+                  cy={y}
+                  r={points.length > 20 ? 1.5 : 2.5}
                   fill="var(--accent-indigo)"
-                  opacity={0.8}
                 />
               );
             })}

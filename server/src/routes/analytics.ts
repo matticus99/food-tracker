@@ -37,6 +37,7 @@ async function getDailyIntakeData(userId: string, fromDate: string) {
 
   // Start with imported data (keyed by date)
   const byDate = new Map<string, { calories: number; protein: number; fat: number; carbs: number; source: string }>();
+  const importedDates = new Set<string>();
   for (const i of imported) {
     byDate.set(i.date, {
       calories: Number(i.calories),
@@ -45,11 +46,12 @@ async function getDailyIntakeData(userId: string, fromDate: string) {
       carbs: Number(i.carbs),
       source: i.source,
     });
+    importedDates.add(i.date);
   }
 
   // Add food_log data for dates not already covered by imports
   for (const entry of logEntries) {
-    if (byDate.has(entry.date)) continue;
+    if (importedDates.has(entry.date)) continue;
     const s = Number(entry.servings) || 1;
     const existing = byDate.get(entry.date) ?? { calories: 0, protein: 0, fat: 0, carbs: 0, source: 'logged' };
     existing.calories += (Number(entry.calories) || 0) * s;
@@ -120,8 +122,11 @@ router.get('/summary', async (req, res, next) => {
       smoothing,
     );
 
-    // BMR
-    const weight = Number(user.currentWeight);
+    // BMR — prefer latest weight log over static profile weight
+    const latestLogWeight = weightsRaw.length > 0
+      ? Number(weightsRaw[weightsRaw.length - 1]!.weight)
+      : null;
+    const weight = latestLogWeight ?? Number(user.currentWeight);
     const height = Number(user.heightInches);
     const age = user.age;
     const sex = user.sex;
@@ -130,10 +135,17 @@ router.get('/summary', async (req, res, next) => {
       const bmrVal = calculateBMR(weight, height, age, sex);
       const activityLevel = Number(user.activityLevel) || 1.25;
       const estimatedTdee = Math.round(bmrVal * activityLevel);
+
+      // Use adaptive TDEE from actual data when available
+      const latestAdaptiveTdee = tdee.length > 1
+        ? Math.round(tdee[tdee.length - 1]!.tdeeEstimate)
+        : null;
+
       bmr = {
         bmr: Math.round(bmrVal),
         activityLevel,
         estimatedTdee,
+        adaptiveTdee: latestAdaptiveTdee,
         calorieTarget: computedTarget?.calorieTarget ?? estimatedTdee,
       };
     }
