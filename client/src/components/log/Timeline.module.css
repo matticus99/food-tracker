@@ -19,54 +19,65 @@
   justify-content: space-between;
   padding: var(--space-sm) var(--space-md);
   border-bottom: 1px solid var(--border-subtle);
+  color: #000;
 }
 
 .cardHeaderLeft {
   display: flex;
   align-items: baseline;
   gap: var(--space-sm);
+  position: relative;
+  z-index: 1;
 }
 
 .cardLabel {
   font-family: var(--font-display);
   font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-weight: 700;
+  color: #000;
+  text-shadow: none;
 }
 
 .cardRange {
   font-family: var(--font-body);
   font-size: 0.7rem;
-  color: var(--text-tertiary);
+  font-weight: 500;
+  color: #000;
+  opacity: 0.7;
+  text-shadow: none;
 }
 
 .cardHeaderRight {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  position: relative;
+  z-index: 1;
 }
 
 .cardCals {
   font-family: var(--font-display);
   font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-weight: 700;
+  color: #000;
+  text-shadow: none;
 }
 
 .cardCals::after {
-  content: ' cal';
+  content: " cal";
   font-size: 0.6rem;
-  font-weight: 400;
-  color: var(--text-tertiary);
+  font-weight: 500;
+  color: inherit;
+  opacity: 0.7;
 }
 
 .addBtn {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 1.5px solid var(--border-default);
+  border: 1.5px solid #000;
   background: none;
-  color: var(--text-tertiary);
+  color: #000;
   font-size: 0.9rem;
   line-height: 1;
   cursor: pointer;
@@ -99,67 +110,63 @@
 }
 
 .card .cardHeader::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  opacity: 0.12;
+  opacity: 0.55;
   pointer-events: none;
 }
 
-/* Early Morning — deep indigo/navy, darkest */
+/* Early Morning — Easter lavender */
 .card[data-time="early-morning"] .cardHeader::before {
-  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #3730a3 100%);
+  background: #d0bfff;
 }
 .card[data-time="early-morning"] {
-  border-color: rgba(99, 102, 241, 0.15);
+  border-color: rgba(177, 151, 252, 0.4);
 }
 
-/* Morning — warm amber sunrise */
+/* Morning — Easter peach/coral */
 .card[data-time="morning"] .cardHeader::before {
-  background: linear-gradient(135deg, #92400e 0%, #d97706 40%, #fbbf24 100%);
+  background: #fcc2d7;
 }
 .card[data-time="morning"] {
-  border-color: rgba(251, 191, 36, 0.15);
+  border-color: rgba(255, 168, 168, 0.4);
 }
 
-/* Midday — bright warm golden, lightest */
+/* Midday — Easter mint/spring green */
 .card[data-time="midday"] .cardHeader::before {
-  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 40%, #fde68a 100%);
-  opacity: 0.18;
+  background: #96f2a7;
 }
 .card[data-time="midday"] {
-  border-color: rgba(253, 230, 138, 0.18);
+  border-color: rgba(105, 219, 124, 0.4);
 }
 
-/* Afternoon — warm orange, starting to fade */
+/* Afternoon — Easter sunny yellow */
 .card[data-time="afternoon"] .cardHeader::before {
-  background: linear-gradient(135deg, #ea580c 0%, #f97316 40%, #fb923c 100%);
+  background: #ffec99;
 }
 .card[data-time="afternoon"] {
-  border-color: rgba(249, 115, 22, 0.15);
+  border-color: rgba(255, 212, 59, 0.4);
 }
 
-/* Evening — sunset rose/purple */
+/* Evening — Easter robin egg blue */
 .card[data-time="evening"] .cardHeader::before {
-  background: linear-gradient(135deg, #9f1239 0%, #be185d 40%, #c084fc 100%);
+  background: #99e9f2;
 }
 .card[data-time="evening"] {
-  border-color: rgba(190, 24, 93, 0.12);
+  border-color: rgba(102, 217, 232, 0.4);
 }
 
-/* Night — deep blue/slate, darkest */
+/* Night — Easter soft lilac/rose */
 .card[data-time="night"] .cardHeader::before {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #334155 100%);
+  background: #eebefa;
 }
 .card[data-time="night"] {
-  border-color: rgba(51, 65, 85, 0.2);
+  border-color: rgba(229, 153, 247, 0.35);
 }
 
-/* Light theme: increase gradient visibility */
+/* Light theme */
 [data-theme="light"] .card .cardHeader::before {
-  opacity: 0.08;
-}
-[data-theme="light"] .card[data-time="midday"] .cardHeader::before {
-  opacity: 0.12;
+  opacity: 0.5;
 }
