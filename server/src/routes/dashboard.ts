@@ -69,7 +69,14 @@ router.get('/', async (req, res, next) => {
       getComputedCalorieTarget(user),
     ]);
 
-    // Format TDEE data
+    // Format TDEE data — use stored history + extend with recent weight/intake
+    const weights = await db.select()
+      .from(weightLog)
+      .where(and(eq(weightLog.userId, userId), gte(weightLog.date, fromDate30)))
+      .orderBy(weightLog.date);
+
+    const weightMap = new Map(weights.map(w => [w.date, Number(w.weight)]));
+
     let tdeeData;
     if (tdeeHistoryData.length > 0) {
       tdeeData = tdeeHistoryData.map(h => ({
@@ -77,14 +84,24 @@ router.get('/', async (req, res, next) => {
         tdeeEstimate: Number(h.tdeeEstimate),
         caloriesConsumed: Number(h.caloriesConsumed),
       }));
+
+      // Extend TDEE beyond stored history using recent weight + intake
+      const lastStoredDate = tdeeHistoryData[tdeeHistoryData.length - 1]!.date;
+      const lastStoredTdee = Number(tdeeHistoryData[tdeeHistoryData.length - 1]!.tdeeEstimate);
+      const gapPoints = intakeData
+        .filter(i => i.date > lastStoredDate && weightMap.has(i.date))
+        .map(i => ({
+          date: i.date,
+          weight: weightMap.get(i.date)!,
+          calories: i.calories,
+        }));
+
+      if (gapPoints.length > 0) {
+        const extended = calculateTdeeHistory(gapPoints, smoothing, lastStoredTdee);
+        tdeeData.push(...extended);
+      }
     } else {
       // Calculate from raw data if no pre-computed history
-      const weights = await db.select()
-        .from(weightLog)
-        .where(and(eq(weightLog.userId, userId), gte(weightLog.date, fromDate30)))
-        .orderBy(weightLog.date);
-
-      const weightMap = new Map(weights.map(w => [w.date, Number(w.weight)]));
       const dataPoints = intakeData
         .filter(i => weightMap.has(i.date))
         .map(i => ({

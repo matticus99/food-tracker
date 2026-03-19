@@ -34,7 +34,9 @@ router.get('/summary', async (req, res, next) => {
       getComputedCalorieTarget(user),
     ]);
 
-    // TDEE data
+    // TDEE data — use stored history + extend with recent weight/intake
+    const weightMap = new Map(weightsRaw.map(w => [w.date, Number(w.weight)]));
+
     let tdee;
     if (tdeeHistoryData.length > 0) {
       tdee = tdeeHistoryData.map(h => ({
@@ -43,8 +45,23 @@ router.get('/summary', async (req, res, next) => {
         caloriesConsumed: Number(h.caloriesConsumed),
         weightUsed: h.weightUsed ? Number(h.weightUsed) : null,
       }));
+
+      // Extend TDEE beyond stored history using recent weight + intake
+      const lastStoredDate = tdeeHistoryData[tdeeHistoryData.length - 1]!.date;
+      const lastStoredTdee = Number(tdeeHistoryData[tdeeHistoryData.length - 1]!.tdeeEstimate);
+      const gapPoints = intakeData
+        .filter(i => i.date > lastStoredDate && weightMap.has(i.date))
+        .map(i => ({
+          date: i.date,
+          weight: weightMap.get(i.date)!,
+          calories: i.calories,
+        }));
+
+      if (gapPoints.length > 0) {
+        const extended = calculateTdeeHistory(gapPoints, smoothing, lastStoredTdee);
+        tdee.push(...extended);
+      }
     } else {
-      const weightMap = new Map(weightsRaw.map(w => [w.date, Number(w.weight)]));
       const dataPoints = intakeData
         .filter(i => weightMap.has(i.date))
         .map(i => ({
