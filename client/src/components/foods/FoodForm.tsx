@@ -25,7 +25,7 @@ interface Props {
   categoryConfig?: CategoryConfig | null;
 }
 
-const EMOJIS = ['🍗', '🥩', '🍳', '🥚', '🍚', '🍞', '🥗', '🥦', '🍎', '🫐', '🥛', '🧀', '🥜', '☕', '🍽️'];
+const QUICK_EMOJIS = ['🍗', '🥩', '🍳', '🥚', '🍞', '🥗', '🍎', '🥛', '☕', '🍕', '🌮', '🍣', '🍽️'];
 
 function formatNum(v: number): string {
   if (v === 0) return '0';
@@ -246,17 +246,50 @@ export default function FoodForm({ open, food, onClose, onSaved, categoryConfig 
           <button className={styles.closeBtn} onClick={onClose}>×</button>
         </div>
         <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.emojiRow}>
-            {EMOJIS.map((e) => (
-              <button
-                key={e}
-                type="button"
-                className={`${styles.emojiBtn} ${emoji === e ? styles.emojiActive : ''}`}
-                onClick={() => setEmoji(e)}
-              >
-                {e}
-              </button>
-            ))}
+          <div className={styles.emojiPicker}>
+            <button
+              type="button"
+              className={styles.emojiPreview}
+              onClick={() => {
+                const input = document.getElementById('emoji-input') as HTMLInputElement;
+                input?.focus();
+              }}
+            >
+              {emoji}
+            </button>
+            <div className={styles.emojiRight}>
+              <input
+                id="emoji-input"
+                className={styles.emojiInput}
+                type="text"
+                value={emoji}
+                placeholder="Tap to type emoji"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) { setEmoji('🍽️'); return; }
+                  // Extract the last grapheme (emoji may be multi-codepoint)
+                  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+                    const segments = [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(val)];
+                    setEmoji(segments[segments.length - 1]!.segment);
+                  } else {
+                    // Fallback: take last 2 chars (covers most emoji)
+                    setEmoji(val.slice(-2));
+                  }
+                }}
+              />
+              <div className={styles.emojiQuickRow}>
+                {QUICK_EMOJIS.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    className={`${styles.emojiQuickBtn} ${emoji === e ? styles.emojiQuickActive : ''}`}
+                    onClick={() => setEmoji(e)}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className={styles.field}>
