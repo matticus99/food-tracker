@@ -22,6 +22,7 @@
   max-width: 520px;
   margin: 0 auto;
   padding: var(--space-md) var(--space-md) calc(var(--bottomnav-height) + var(--space-xl));
+  padding-top: calc(var(--safe-area-top) + var(--space-md));
 }
 
 /* ── Header ── */

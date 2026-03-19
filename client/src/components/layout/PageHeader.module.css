@@ -1,6 +1,6 @@
 .header {
   position: sticky;
-  top: 0;
+  top: var(--safe-area-top);
   z-index: 50;
   background: var(--bg-header);
   margin-bottom: var(--space-md);

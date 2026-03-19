@@ -45,8 +45,15 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-lg);
+  padding-top: calc(var(--safe-area-top) + var(--space-lg));
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .header {
+    padding-top: var(--space-lg);
+  }
 }
 
 .title {

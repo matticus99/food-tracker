@@ -13,6 +13,7 @@
   .main {
     margin-left: 0;
     padding: var(--space-md) var(--space-md);
+    padding-top: calc(var(--safe-area-top) + var(--space-md));
     padding-bottom: calc(var(--bottomnav-height) + var(--safe-area-bottom) + var(--space-md));
   }
 }
