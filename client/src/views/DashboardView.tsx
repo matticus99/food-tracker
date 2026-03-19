@@ -116,11 +116,17 @@ export default function DashboardView() {
     const intakeMap = new Map((intakeData ?? []).map((d) => [d.date, d.calories]));
     const allDates = [...new Set([...tdeeMap.keys(), ...intakeMap.keys()])].sort();
 
-    const allPoints = allDates.map((dt) => ({
-      date: dt,
-      tdee: tdeeMap.get(dt),
-      intake: intakeMap.get(dt),
-    }));
+    // Carry forward the last known TDEE for dates that only have intake
+    let lastTdee: number | undefined;
+    const allPoints = allDates.map((dt) => {
+      const tdee = tdeeMap.get(dt) ?? lastTdee;
+      if (tdeeMap.has(dt)) lastTdee = tdeeMap.get(dt);
+      return {
+        date: dt,
+        tdee,
+        intake: intakeMap.get(dt),
+      };
+    });
 
     // Show the most recent 7 data points
     const points = allPoints.slice(-7);
