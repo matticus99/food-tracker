@@ -28,22 +28,14 @@ export default function MacroCard({ protein, proteinTarget, fat, fatTarget, carb
       {rows.map((row) => {
         const pct = row.target > 0 ? Math.min((row.current / row.target) * 100, 100) : 0;
         return (
-          <div key={row.label} className={styles.row}>
-            <div className={styles.meta}>
-              <span className={styles.dot} style={{ background: row.color }} />
+          <div key={row.label} className={styles.bar} style={{ '--bar-color': row.color } as React.CSSProperties}>
+            <div className={styles.barFill} style={{ width: `${pct}%` }} />
+            <div className={styles.barContent}>
               <span className={styles.label}>{row.label}</span>
+              <span className={styles.values}>
+                {Math.round(row.current)}g / {Math.round(row.target)}g
+              </span>
             </div>
-            <div className={styles.barWrap}>
-              <div className={styles.barTrack}>
-                <div
-                  className={styles.barFill}
-                  style={{ width: `${pct}%`, background: row.color }}
-                />
-              </div>
-            </div>
-            <span className={styles.values}>
-              {Math.round(row.current)}g / {Math.round(row.target)}g
-            </span>
           </div>
         );
       })}
