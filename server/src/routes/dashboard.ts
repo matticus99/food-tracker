@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { db } from '../db/connection.js';
-import { foodLog, foods, weightLog, tdeeHistory, dailyIntake } from '../db/schema.js';
+import { foodLog, foods, weightLog, tdeeHistory } from '../db/schema.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { validateDateParam } from '../validation/schemas.js';
 import { calculateTdeeHistory } from '../services/tdee.js';
 import { getComputedCalorieTarget } from '../services/calorieTarget.js';
+import { getDailyIntakeData } from '../services/dailyIntakeData.js';
 
 const router = Router();
 
@@ -19,12 +20,11 @@ router.get('/', async (req, res, next) => {
 
     const user = req.user;
     const userId = req.userId;
-    const fromDate7 = daysAgo(7);
     const fromDate30 = daysAgo(30);
     const smoothing = Number(user.tdeeSmoothingFactor) || 0.1;
 
     // Run all queries in parallel
-    const [logEntries, todayWeight, tdeeHistoryData, intakeImported, computedCalorieTarget] = await Promise.all([
+    const [logEntries, todayWeight, tdeeHistoryData, intakeData, computedCalorieTarget] = await Promise.all([
       // Food log for the given date
       db.select({
         id: foodLog.id,
@@ -62,11 +62,8 @@ router.get('/', async (req, res, next) => {
         .where(and(eq(tdeeHistory.userId, userId), gte(tdeeHistory.date, fromDate30)))
         .orderBy(tdeeHistory.date),
 
-      // Daily intake (last 30 days for chart)
-      db.select()
-        .from(dailyIntake)
-        .where(and(eq(dailyIntake.userId, userId), gte(dailyIntake.date, fromDate30)))
-        .orderBy(dailyIntake.date),
+      // Daily intake (last 30 days, merges imports + food_log)
+      getDailyIntakeData(userId, fromDate30),
 
       // Computed calorie target (only needs user, runs in parallel)
       getComputedCalorieTarget(user),
@@ -88,51 +85,14 @@ router.get('/', async (req, res, next) => {
         .orderBy(weightLog.date);
 
       const weightMap = new Map(weights.map(w => [w.date, Number(w.weight)]));
-      const dataPoints = intakeImported
+      const dataPoints = intakeData
         .filter(i => weightMap.has(i.date))
         .map(i => ({
           date: i.date,
           weight: weightMap.get(i.date)!,
-          calories: Number(i.calories),
+          calories: i.calories,
         }));
       tdeeData = calculateTdeeHistory(dataPoints, smoothing);
-    }
-
-    // Format intake data
-    let intakeData;
-    if (intakeImported.length > 0) {
-      intakeData = intakeImported.map(i => ({
-        date: i.date,
-        calories: Number(i.calories),
-        protein: Number(i.protein),
-        fat: Number(i.fat),
-        carbs: Number(i.carbs),
-      }));
-    } else {
-      // Aggregate from food_log for the last 7 days
-      const recentLog = await db
-        .select({ date: foodLog.date, servings: foodLog.servings, calories: foods.calories })
-        .from(foodLog)
-        .innerJoin(foods, eq(foodLog.foodId, foods.id))
-        .where(and(eq(foodLog.userId, userId), gte(foodLog.date, fromDate30)))
-        .orderBy(foodLog.date);
-
-      const byDate = new Map<string, { calories: number; protein: number; fat: number; carbs: number }>();
-      for (const e of recentLog) {
-        const s = Number(e.servings) || 1;
-        const cal = (Number(e.calories) || 0) * s;
-        const existing = byDate.get(e.date) ?? { calories: 0, protein: 0, fat: 0, carbs: 0 };
-        existing.calories += cal;
-        byDate.set(e.date, existing);
-      }
-
-      intakeData = Array.from(byDate.entries()).map(([d, t]) => ({
-        date: d,
-        calories: Math.round(t.calories * 10) / 10,
-        protein: 0,
-        fat: 0,
-        carbs: 0,
-      }));
     }
 
     res.json({
