@@ -157,22 +157,6 @@ export default function TdeeIntakeChart({ data, avgTdee, avgIntake, targetCalori
           </>
         )}
       </svg>
-      <div className={styles.legend}>
-        <span className={styles.legendItem}>
-          <span className={styles.legendLine} style={{ background: 'var(--accent-orange)' }} />
-          TDEE
-        </span>
-        <span className={styles.legendItem}>
-          <span className={styles.legendLine} style={{ background: 'var(--accent-indigo)' }} />
-          Intake
-        </span>
-        {targetCalories != null && (
-          <span className={styles.legendItem}>
-            <span className={styles.legendDash} />
-            Target
-          </span>
-        )}
-      </div>
     </div>
   );
 }

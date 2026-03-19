@@ -176,9 +176,19 @@ export default function DashboardView() {
                   <span className={styles.calLabel}>target</span>
                 </div>
               </div>
+              <button
+                className={styles.weightBtn}
+                onClick={() => setWeightModalOpen(true)}
+              >
+                <span className={styles.weightText}>
+                  {todayWeight && todayWeight.length > 0
+                    ? `${Number(todayWeight[0]!.weight).toFixed(1)} lbs`
+                    : 'Log Weight'}
+                </span>
+              </button>
             </div>
 
-            <div className={viewStyles.staggerIn} style={{ animationDelay: '60ms' }}>
+            <div className={viewStyles.staggerIn} style={{ animationDelay: '120ms' }}>
               <MacroCard
                 protein={totals.protein}
                 proteinTarget={user?.proteinTarget ?? 180}
@@ -188,19 +198,6 @@ export default function DashboardView() {
                 carbsTarget={user?.carbTarget ?? 240}
               />
             </div>
-
-            <button
-              className={`${styles.weightBtn} ${viewStyles.staggerIn}`}
-              style={{ animationDelay: '120ms' }}
-              onClick={() => setWeightModalOpen(true)}
-            >
-              <span className={styles.weightIcon}>⚖️</span>
-              <span className={styles.weightText}>
-                {todayWeight && todayWeight.length > 0
-                  ? `${Number(todayWeight[0]!.weight).toFixed(1)} lbs`
-                  : 'Log Weight'}
-              </span>
-            </button>
 
             {!tdeeData || loading ? (
               <SkeletonCard lines={2} />

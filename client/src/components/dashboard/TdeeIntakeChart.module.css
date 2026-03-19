@@ -2,7 +2,7 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: var(--space-lg);
+  padding: var(--space-sm) var(--space-md);
 }
 
 .header {
@@ -61,7 +61,7 @@
 
 .chart {
   width: 100%;
-  height: 80px;
+  height: 120px;
   display: block;
 }
 
@@ -72,30 +72,3 @@
   padding: var(--space-lg) 0;
 }
 
-.legend {
-  display: flex;
-  gap: var(--space-md);
-  justify-content: center;
-  margin-top: var(--space-sm);
-}
-
-.legendItem {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  color: var(--text-tertiary);
-}
-
-.legendLine {
-  width: 12px;
-  height: 2px;
-  border-radius: 1px;
-}
-
-.legendDash {
-  width: 12px;
-  height: 0;
-  border-top: 2px dashed var(--accent-emerald);
-}
