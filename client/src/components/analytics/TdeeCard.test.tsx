@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import TdeeCard from './TdeeCard';
 import { toLocalDateStr } from '../../utils/date';
 
@@ -28,10 +27,8 @@ describe('TdeeCard', () => {
     expect(screen.getByText('TDEE')).toBeInTheDocument();
   });
 
-  it('renders period selector with 7d, 14d, 30d', () => {
+  it('renders period selector with 30d', () => {
     render(<TdeeCard data={mockTdeeData} />);
-    expect(screen.getByText('7d')).toBeInTheDocument();
-    expect(screen.getByText('14d')).toBeInTheDocument();
     expect(screen.getByText('30d')).toBeInTheDocument();
   });
 
@@ -53,18 +50,8 @@ describe('TdeeCard', () => {
     expect(screen.getByText('No TDEE data')).toBeInTheDocument();
   });
 
-  it('14d is initially active', () => {
+  it('30d is initially active', () => {
     render(<TdeeCard data={mockTdeeData} />);
-
-    const btn14 = screen.getByText('14d');
-    expect(btn14.classList.contains('active')).toBe(true);
-  });
-
-  it('clicking period button changes active period', async () => {
-    const user = userEvent.setup();
-    render(<TdeeCard data={mockTdeeData} />);
-
-    await user.click(screen.getByText('30d'));
 
     const btn30 = screen.getByText('30d');
     expect(btn30.classList.contains('active')).toBe(true);

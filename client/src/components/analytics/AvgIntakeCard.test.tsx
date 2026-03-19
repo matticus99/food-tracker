@@ -42,7 +42,7 @@ describe('AvgIntakeCard', () => {
     expect(screen.getByText('2000')).toBeInTheDocument();
   });
 
-  it('renders SVG chart with bars', () => {
+  it('renders SVG line chart with dots', () => {
     const { container } = render(
       <AvgIntakeCard data={mockIntakeData} calorieTarget={calorieTarget} />,
     );
@@ -51,9 +51,13 @@ describe('AvgIntakeCard', () => {
     const svg = container.querySelector('svg');
     expect(svg).toBeInTheDocument();
 
-    // Should have bars for each data point
-    const rects = svg!.querySelectorAll('rect');
-    expect(rects.length).toBe(3);
+    // Should have circles (dots) for each data point
+    const circles = svg!.querySelectorAll('circle');
+    expect(circles.length).toBe(3);
+
+    // Should have a polyline for the line
+    const polyline = svg!.querySelector('polyline');
+    expect(polyline).toBeInTheDocument();
   });
 
   it('shows "No intake data" when data is empty', () => {

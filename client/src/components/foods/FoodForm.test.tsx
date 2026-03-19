@@ -71,12 +71,14 @@ describe('FoodForm', () => {
     expect(screen.getByText('Carbs (g)')).toBeInTheDocument();
   });
 
-  it('renders emoji picker buttons', () => {
+  it('renders emoji picker with preview, input, and quick picks', () => {
     const { container } = render(<FoodForm {...defaultProps} />);
 
-    // Should have at least 10 emoji buttons
-    const emojiButtons = container.querySelectorAll('[class*="emojiBtn"]');
-    expect(emojiButtons.length).toBeGreaterThanOrEqual(10);
+    // Should have a preview button, an emoji input, and quick-pick buttons
+    expect(container.querySelector('[class*="emojiPreview"]')).toBeInTheDocument();
+    expect(container.querySelector('#emoji-input')).toBeInTheDocument();
+    const quickBtns = container.querySelectorAll('[class*="emojiQuickBtn"]');
+    expect(quickBtns.length).toBeGreaterThanOrEqual(10);
   });
 
   it('pre-fills form when editing existing food', () => {
@@ -92,12 +94,11 @@ describe('FoodForm', () => {
     expect(caloriesInput).toBeInTheDocument();
   });
 
-  it('starts with empty fields for new food', () => {
-    render(<FoodForm {...defaultProps} />);
+  it('starts with empty name field for new food', () => {
+    const { container } = render(<FoodForm {...defaultProps} />);
 
-    // The name field should be empty
-    const inputs = screen.getAllByRole('textbox');
-    const nameInput = inputs[0] as HTMLInputElement;
+    // The name input is the required text input (not the emoji input)
+    const nameInput = container.querySelector('input[type="text"][required]') as HTMLInputElement;
     expect(nameInput.value).toBe('');
   });
 
@@ -152,8 +153,8 @@ describe('FoodForm', () => {
       <FoodForm {...defaultProps} onSaved={handleSaved} onClose={handleClose} />
     );
 
-    // Fill in the required name field
-    const nameInput = screen.getAllByRole('textbox')[0]!;
+    // Fill in the required name field (the one with required attribute, not the emoji input)
+    const nameInput = document.querySelector('input[type="text"][required]')!;
     await user.type(nameInput, 'My Food');
     await user.click(screen.getByText('Create'));
 
@@ -206,15 +207,19 @@ describe('FoodForm', () => {
     expect(screen.getByText('Saving...')).toBeInTheDocument();
   });
 
-  it('clicking emoji selects it (active class)', async () => {
+  it('clicking quick emoji selects it and updates preview', async () => {
     const user = userEvent.setup();
     const { container } = render(<FoodForm {...defaultProps} />);
 
-    const emojiButtons = container.querySelectorAll('[class*="emojiBtn"]');
-    // Click on the first emoji
-    await user.click(emojiButtons[0]!);
+    const quickBtns = container.querySelectorAll('[class*="emojiQuickBtn"]');
+    // Click the first quick emoji (🍗)
+    await user.click(quickBtns[0]!);
 
-    // That button should get the active class
-    expect(emojiButtons[0]!.classList.contains('emojiActive')).toBe(true);
+    // The preview should show the selected emoji
+    const preview = container.querySelector('[class*="emojiPreview"]');
+    expect(preview!.textContent).toBe('🍗');
+
+    // The clicked button should get the active class
+    expect(quickBtns[0]!.classList.toString()).toContain('emojiQuickActive');
   });
 });

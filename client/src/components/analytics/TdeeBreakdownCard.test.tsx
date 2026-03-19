@@ -8,6 +8,15 @@ const mockBmrData = {
   bmr: 1750,
   activityLevel: 1.55,
   estimatedTdee: 2713,
+  adaptiveTdee: null,
+  calorieTarget: 2200,
+};
+
+const mockBmrDataWithAdaptive = {
+  bmr: 1750,
+  activityLevel: 1.55,
+  estimatedTdee: 2713,
+  adaptiveTdee: 2450,
   calorieTarget: 2200,
 };
 
@@ -62,5 +71,19 @@ describe('TdeeBreakdownCard', () => {
 
     const calUnits = screen.getAllByText('cal');
     expect(calUnits.length).toBe(3);
+  });
+
+  it('shows adaptive TDEE when available', () => {
+    render(<TdeeBreakdownCard data={mockBmrDataWithAdaptive} />);
+    expect(screen.getByText('TDEE')).toBeInTheDocument();
+    expect(screen.getByText('2450')).toBeInTheDocument();
+    // Should NOT show "Est. TDEE" label
+    expect(screen.queryByText('Est. TDEE')).not.toBeInTheDocument();
+  });
+
+  it('falls back to estimated TDEE when adaptive is null', () => {
+    render(<TdeeBreakdownCard data={mockBmrData} />);
+    expect(screen.getByText('Est. TDEE')).toBeInTheDocument();
+    expect(screen.getByText('2713')).toBeInTheDocument();
   });
 });
