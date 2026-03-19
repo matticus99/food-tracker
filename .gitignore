@@ -30,3 +30,5 @@ test-data/MacroFactor-20260226190955.xlsx
 .claude/settings.local.json
 client/.vite/deps/_metadata.json
 client/.vite/deps/package.json
+docs/defect_screenshots/NoLines.png
+docs/defect_screenshots/Screenshot 2026-03-18 at 18.25.25.png
