@@ -66,9 +66,11 @@ describe('AddFoodModal', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders modal title with formatted hour', () => {
+  it('renders modal title and selects correct time block', () => {
     render(<AddFoodModal {...defaultProps} hour={12} />);
-    expect(screen.getByText(/Add Food.*12 PM/)).toBeInTheDocument();
+    expect(screen.getByText('Add Food')).toBeInTheDocument();
+    // hour=12 → midday block should be active
+    expect(screen.getByText('Midday').closest('button')).toHaveClass('timeBlockActive');
   });
 
   it('renders search input', () => {
@@ -174,18 +176,18 @@ describe('AddFoodModal', () => {
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
-  it('formats various hours correctly', () => {
-    const { rerender } = render(<AddFoodModal {...defaultProps} hour={0} />);
-    expect(screen.getByText(/12 AM/)).toBeInTheDocument();
+  it('selects correct time block for various hours', () => {
+    const { rerender } = render(<AddFoodModal {...defaultProps} hour={2} />);
+    expect(screen.getByText('Early AM').closest('button')).toHaveClass('timeBlockActive');
 
     rerender(<AddFoodModal {...defaultProps} hour={7} />);
-    expect(screen.getByText(/7 AM/)).toBeInTheDocument();
+    expect(screen.getByText('Morning').closest('button')).toHaveClass('timeBlockActive');
 
     rerender(<AddFoodModal {...defaultProps} hour={12} />);
-    expect(screen.getByText(/12 PM/)).toBeInTheDocument();
+    expect(screen.getByText('Midday').closest('button')).toHaveClass('timeBlockActive');
 
-    rerender(<AddFoodModal {...defaultProps} hour={18} />);
-    expect(screen.getByText(/6 PM/)).toBeInTheDocument();
+    rerender(<AddFoodModal {...defaultProps} hour={19} />);
+    expect(screen.getByText('Evening').closest('button')).toHaveClass('timeBlockActive');
   });
 
   it('submits batch payload when Save is clicked', async () => {

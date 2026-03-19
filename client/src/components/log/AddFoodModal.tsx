@@ -30,11 +30,30 @@ interface Props {
   categoryConfig?: CategoryConfig | null;
 }
 
+const TIME_BLOCKS = [
+  { key: 'early-morning', label: 'Early AM', hour: 2, icon: '🌙' },
+  { key: 'morning', label: 'Morning', hour: 7, icon: '🌅' },
+  { key: 'midday', label: 'Midday', hour: 11, icon: '☀️' },
+  { key: 'afternoon', label: 'Afternoon', hour: 15, icon: '🌤️' },
+  { key: 'evening', label: 'Evening', hour: 19, icon: '🌇' },
+  { key: 'night', label: 'Night', hour: 22, icon: '🌑' },
+];
+
+function hourToBlock(h: number): string {
+  if (h < 5) return 'early-morning';
+  if (h < 10) return 'morning';
+  if (h < 13) return 'midday';
+  if (h < 17) return 'afternoon';
+  if (h < 21) return 'evening';
+  return 'night';
+}
+
 export default function AddFoodModal({ open, hour, date, onClose, onAdded, categoryConfig }: Props) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<string>('favorites');
   const [selections, setSelections] = useState<Map<string, SelectedFood>>(new Map());
   const [submitting, setSubmitting] = useState(false);
+  const [selectedBlock, setSelectedBlock] = useState(() => hourToBlock(hour));
 
   const params = new URLSearchParams();
   if (search) params.set('search', search);
@@ -47,8 +66,9 @@ export default function AddFoodModal({ open, hour, date, onClose, onAdded, categ
       setSearch('');
       setFilter('favorites');
       setSelections(new Map());
+      setSelectedBlock(hourToBlock(hour));
     }
-  }, [open]);
+  }, [open, hour]);
 
   function toggleFood(food: Food) {
     setSelections(prev => {
@@ -76,11 +96,12 @@ export default function AddFoodModal({ open, hour, date, onClose, onAdded, categ
   async function handleSave() {
     if (selections.size === 0) return;
     setSubmitting(true);
+    const saveHour = TIME_BLOCKS.find(b => b.key === selectedBlock)?.hour ?? hour;
     try {
       const entries = Array.from(selections.values()).map(({ food, servings }) => ({
         foodId: food.id,
         date,
-        timeHour: hour,
+        timeHour: saveHour,
         servings,
       }));
       await apiFetch('/log/batch', {
@@ -94,21 +115,27 @@ export default function AddFoodModal({ open, hour, date, onClose, onAdded, categ
     }
   }
 
-  const formatHour = (h: number) => {
-    if (h === 0) return '12 AM';
-    if (h < 12) return `${h} AM`;
-    if (h === 12) return '12 PM';
-    return `${h - 12} PM`;
-  };
-
   if (!open) return null;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
-          <h3 className={styles.title}>Add Food — {formatHour(hour)}</h3>
+          <h3 className={styles.title}>Add Food</h3>
           <button className={styles.closeBtn} onClick={onClose}>×</button>
+        </div>
+        <div className={styles.timePicker}>
+          {TIME_BLOCKS.map((block) => (
+            <button
+              key={block.key}
+              className={`${styles.timeBlock} ${selectedBlock === block.key ? styles.timeBlockActive : ''}`}
+              data-time={block.key}
+              onClick={() => setSelectedBlock(block.key)}
+            >
+              <span className={styles.timeIcon}>{block.icon}</span>
+              <span className={styles.timeLabel}>{block.label}</span>
+            </button>
+          ))}
         </div>
 
         <div className={styles.filterTabs}>

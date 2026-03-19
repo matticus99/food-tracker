@@ -78,6 +78,94 @@
   background: var(--bg-hover);
 }
 
+/* ── Time-of-day picker ── */
+
+.timePicker {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.timePicker::-webkit-scrollbar {
+  display: none;
+}
+
+.timeBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-xs) var(--space-sm);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--bg-hover);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex: 1;
+  min-width: 0;
+}
+
+.timeBlock:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-default);
+}
+
+.timeBlockActive {
+  border-color: var(--accent-indigo);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.timeBlockActive[data-time="early-morning"] {
+  border-color: #b197fc;
+  background: rgba(208, 191, 255, 0.25);
+}
+
+.timeBlockActive[data-time="morning"] {
+  border-color: #ffa8a8;
+  background: rgba(252, 194, 215, 0.25);
+}
+
+.timeBlockActive[data-time="midday"] {
+  border-color: #69db7c;
+  background: rgba(150, 242, 167, 0.25);
+}
+
+.timeBlockActive[data-time="afternoon"] {
+  border-color: #ffd43b;
+  background: rgba(255, 236, 153, 0.25);
+}
+
+.timeBlockActive[data-time="evening"] {
+  border-color: #66d9e8;
+  background: rgba(153, 233, 242, 0.25);
+}
+
+.timeBlockActive[data-time="night"] {
+  border-color: #e599f7;
+  background: rgba(238, 190, 250, 0.25);
+}
+
+.timeIcon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.timeLabel {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.timeBlockActive .timeLabel {
+  color: var(--text-primary);
+}
+
 /* ── Filter tabs ── */
 
 .filterTabs {
