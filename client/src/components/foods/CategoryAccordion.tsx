@@ -32,6 +32,7 @@ interface Props {
   refetchCounts: () => void;
   onAddCategory: (name: string) => void;
   onDeleteCategory: (name: string) => void;
+  onRenameCategory: (key: string, newLabel: string) => void;
 }
 
 function AccordionCard({
@@ -48,6 +49,7 @@ function AccordionCard({
   refreshTrigger,
   isCustom,
   onDeleteCategory,
+  onRenameCategory,
 }: {
   categoryKey: string;
   label: string;
@@ -62,8 +64,12 @@ function AccordionCard({
   refreshTrigger: number;
   isCustom: boolean;
   onDeleteCategory?: (name: string) => void;
+  onRenameCategory?: (key: string, newLabel: string) => void;
 }) {
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(label);
+  const renameRef = useRef<HTMLInputElement>(null);
   const params = new URLSearchParams({ category: categoryKey });
   if (search) params.set('search', search);
   const apiPath = expanded ? `/foods?${params}` : null;
@@ -82,10 +88,51 @@ function AccordionCard({
     if (!expanded) setShowTimePicker(false);
   }, [expanded]);
 
+  const commitRename = useCallback(() => {
+    const trimmed = renameValue.trim();
+    if (trimmed && trimmed !== label) {
+      onRenameCategory?.(categoryKey, trimmed);
+    }
+    setRenaming(false);
+  }, [renameValue, label, categoryKey, onRenameCategory]);
+
+  useEffect(() => {
+    if (renaming) {
+      renameRef.current?.focus();
+      renameRef.current?.select();
+    }
+  }, [renaming]);
+
   return (
     <div className={`${styles.card} ${expanded ? styles.expanded : ''}`}>
       <button className={styles.header} onClick={onToggle}>
-        <span className={styles.label}>{label}</span>
+        {renaming ? (
+          <input
+            ref={renameRef}
+            className={styles.renameInput}
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitRename();
+              if (e.key === 'Escape') { setRenameValue(label); setRenaming(false); }
+            }}
+            onClick={(e) => e.stopPropagation()}
+            maxLength={50}
+          />
+        ) : (
+          <span
+            className={styles.label}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setRenameValue(label);
+              setRenaming(true);
+            }}
+          >
+            {label}
+          </span>
+        )}
         <span className={styles.count}>{count}</span>
         <span className={styles.chevron}>{expanded ? '\u25BE' : '\u25B8'}</span>
       </button>
@@ -174,6 +221,7 @@ export default function CategoryAccordion({
   refreshTrigger,
   onAddCategory,
   onDeleteCategory,
+  onRenameCategory,
 }: Props) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -238,6 +286,7 @@ export default function CategoryAccordion({
           refreshTrigger={refreshTrigger}
           isCustom={customCategories.includes(key)}
           onDeleteCategory={onDeleteCategory}
+          onRenameCategory={onRenameCategory}
         />
       ))}
       {search && visibleCategories.length === 0 && (

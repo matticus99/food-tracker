@@ -61,6 +61,19 @@
   text-align: center;
 }
 
+.renameInput {
+  flex: 1;
+  padding: 2px var(--space-xs);
+  border: 1px solid var(--accent-indigo);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  outline: none;
+}
+
 .body {
   display: grid;
   grid-template-rows: 0fr;

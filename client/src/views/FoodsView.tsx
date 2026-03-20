@@ -110,6 +110,21 @@ export default function FoodsView() {
     }
   }, [dateStr, toast]);
 
+  const handleRenameCategory = useCallback(async (key: string, newLabel: string) => {
+    const current = user?.categoryConfig ?? {};
+    const labels = { ...(current.labels ?? {}), [key]: newLabel };
+    try {
+      await apiFetch('/user', {
+        method: 'PUT',
+        body: JSON.stringify({ categoryConfig: { ...current, labels } }),
+      });
+      refetchUser();
+      toast(`Category renamed to "${newLabel}"`, 'success');
+    } catch {
+      toast('Failed to rename category', 'error');
+    }
+  }, [user, refetchUser, toast]);
+
   const handleDeleteCategory = useCallback(async (name: string) => {
     const current = user?.categoryConfig ?? {};
     const custom = (current.customCategories ?? []).filter((c) => c !== name);
@@ -153,6 +168,7 @@ export default function FoodsView() {
             refetchCounts={refetchCounts}
             onAddCategory={handleAddCategory}
             onDeleteCategory={handleDeleteCategory}
+            onRenameCategory={handleRenameCategory}
           />
         )}
       </div>
