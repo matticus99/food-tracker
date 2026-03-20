@@ -28,9 +28,7 @@ describe('TdeeIntakeChart', () => {
     ];
     render(<TdeeIntakeChart data={data} avgTdee={2250} avgIntake={1900} />);
 
-    // "TDEE" appears in both the stat label and legend, so use getAllByText
-    const tdeeLabels = screen.getAllByText('TDEE');
-    expect(tdeeLabels.length).toBeGreaterThanOrEqual(2); // stat label + legend
+    expect(screen.getAllByText('TDEE').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Avg')).toBeInTheDocument();
     expect(screen.getByText('2250')).toBeInTheDocument();
     expect(screen.getByText('1900')).toBeInTheDocument();
@@ -59,7 +57,7 @@ describe('TdeeIntakeChart', () => {
     expect(svg).toBeInTheDocument();
   });
 
-  it('renders legend items for TDEE and Intake', () => {
+  it('renders chart area for TDEE and Intake', () => {
     const data = [
       { date: '2025-01-01', tdee: 2200, intake: 1800 },
     ];
@@ -67,9 +65,8 @@ describe('TdeeIntakeChart', () => {
       <TdeeIntakeChart data={data} avgTdee={2200} avgIntake={1800} />
     );
 
-    // Two legend labels
-    const legendItems = container.querySelectorAll('[class*="legendItem"]');
-    expect(legendItems.length).toBe(2);
+    const svg = container.querySelector('svg');
+    expect(svg).toBeInTheDocument();
   });
 
   it('handles data with missing tdee values', () => {
@@ -134,7 +131,7 @@ describe('TdeeIntakeChart', () => {
     expect(screen.queryByText('Target')).not.toBeInTheDocument();
   });
 
-  it('renders target legend item when targetCalories is provided', () => {
+  it('renders target stat when targetCalories is provided (with dashed line)', () => {
     const data = [
       { date: '2025-01-01', tdee: 2200, intake: 1800 },
     ];
@@ -142,8 +139,8 @@ describe('TdeeIntakeChart', () => {
       <TdeeIntakeChart data={data} avgTdee={2200} avgIntake={1800} targetCalories={2000} />
     );
 
-    const legendItems = container.querySelectorAll('[class*="legendItem"]');
-    expect(legendItems.length).toBe(3);
+    const dashedLine = container.querySelector('line[stroke-dasharray]');
+    expect(dashedLine).toBeInTheDocument();
   });
 
   it('renders dashed target line in SVG', () => {

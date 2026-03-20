@@ -123,8 +123,17 @@ describe('foodCreateSchema', () => {
     expect(() => foodCreateSchema.parse({ name: 'a'.repeat(256) })).toThrow();
   });
 
-  it('rejects invalid category', () => {
-    expect(() => foodCreateSchema.parse({ name: 'X', category: 'junk' })).toThrow();
+  it('rejects category over 50 chars', () => {
+    expect(() => foodCreateSchema.parse({ name: 'X', category: 'a'.repeat(51) })).toThrow();
+  });
+
+  it('rejects empty category', () => {
+    expect(() => foodCreateSchema.parse({ name: 'X', category: '' })).toThrow();
+  });
+
+  it('accepts any valid category string', () => {
+    const result = foodCreateSchema.parse({ name: 'X', category: 'custom_cat' });
+    expect(result.category).toBe('custom_cat');
   });
 
   it('rejects negative calories', () => {

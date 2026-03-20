@@ -10,7 +10,7 @@ const mockFoods = [
     id: 'f1',
     name: 'Chicken Breast',
     emoji: '🍗',
-    category: 'proteins',
+    category: 'favorites',
     servingLabel: '100g',
     servingGrams: null,
     calories: '165',
@@ -22,7 +22,7 @@ const mockFoods = [
     id: 'f2',
     name: 'Brown Rice',
     emoji: '🍚',
-    category: 'grains',
+    category: 'favorites',
     servingLabel: '1 cup',
     servingGrams: null,
     calories: '216',
@@ -32,16 +32,28 @@ const mockFoods = [
   },
 ];
 
+const mockCounts: Record<string, number> = { favorites: 2, daily: 0 };
+const emptyCounts: Record<string, number> = { favorites: 0, daily: 0 };
+
 // ── Setup ────────────────────────────────────────────────────────────────────
 
+function mockFetch(foods: typeof mockFoods, counts: Record<string, number>) {
+  return vi.fn().mockImplementation((url: string) => {
+    if (typeof url === 'string' && url.includes('/foods/counts')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(counts) });
+    }
+    if (typeof url === 'string' && url.includes('/foods')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(foods) });
+    }
+    if (typeof url === 'string' && url.includes('/log/batch')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) });
+    }
+    return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+  });
+}
+
 beforeEach(() => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockFoods),
-    }),
-  );
+  vi.stubGlobal('fetch', mockFetch(mockFoods, mockCounts));
 });
 
 afterEach(() => {
@@ -78,7 +90,16 @@ describe('AddFoodModal', () => {
     expect(screen.getByPlaceholderText('Search foods...')).toBeInTheDocument();
   });
 
-  it('displays food list from API', async () => {
+  it('renders accordion cards for categories', async () => {
+    render(<AddFoodModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Daily')).toBeInTheDocument();
+  });
+
+  it('displays food list from API in expanded card', async () => {
     render(<AddFoodModal {...defaultProps} />);
 
     await waitFor(() => {
@@ -87,7 +108,7 @@ describe('AddFoodModal', () => {
     expect(screen.getByText('Brown Rice')).toBeInTheDocument();
   });
 
-  it('shows food emoji and serving info', async () => {
+  it('shows food serving info', async () => {
     render(<AddFoodModal {...defaultProps} />);
 
     await waitFor(() => {
@@ -95,19 +116,21 @@ describe('AddFoodModal', () => {
     });
   });
 
-  it('shows "No foods found" when API returns empty list', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve([]),
-      }),
-    );
+  it('shows "No foods" when expanded card is empty', async () => {
+    vi.stubGlobal('fetch', mockFetch([], emptyCounts));
 
     render(<AddFoodModal {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText('No foods found')).toBeInTheDocument();
+      expect(screen.getByText('No foods')).toBeInTheDocument();
+    });
+  });
+
+  it('shows Select All button when card has foods', async () => {
+    render(<AddFoodModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Select All')).toBeInTheDocument();
     });
   });
 
@@ -157,6 +180,36 @@ describe('AddFoodModal', () => {
     expect(screen.getByText(/Save 2 foods/)).toBeInTheDocument();
   });
 
+  it('Select All selects all foods in the card', async () => {
+    const user = userEvent.setup();
+    render(<AddFoodModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Select All')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Select All'));
+
+    expect(screen.getByText(/Save 2 foods/)).toBeInTheDocument();
+    expect(screen.getByText('Deselect All')).toBeInTheDocument();
+  });
+
+  it('Deselect All removes all selections from the card', async () => {
+    const user = userEvent.setup();
+    render(<AddFoodModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Select All')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Select All'));
+    expect(screen.getByText('Deselect All')).toBeInTheDocument();
+
+    await user.click(screen.getByText('Deselect All'));
+    expect(screen.queryByText(/Save/)).not.toBeInTheDocument();
+    expect(screen.getByText('Select All')).toBeInTheDocument();
+  });
+
   it('calls onClose when overlay is clicked', async () => {
     const user = userEvent.setup();
     const handleClose = vi.fn();
@@ -192,10 +245,7 @@ describe('AddFoodModal', () => {
 
   it('submits batch payload when Save is clicked', async () => {
     const user = userEvent.setup();
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockFoods),
-    });
+    const fetchSpy = mockFetch(mockFoods, mockCounts);
     vi.stubGlobal('fetch', fetchSpy);
 
     const handleAdded = vi.fn();
