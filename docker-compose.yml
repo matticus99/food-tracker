@@ -17,7 +17,7 @@ services:
       target: server-deps
     env_file: .env.docker
     working_dir: /app/server
-    command: npx drizzle-kit push
+    command: npx drizzle-kit push --force
     depends_on:
       db:
         condition: service_healthy
