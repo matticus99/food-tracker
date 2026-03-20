@@ -47,7 +47,8 @@ export async function importCsvFoods(buffer: Buffer, userId: string): Promise<Cs
   const errors: Array<{ row: number; reason: string }> = [];
 
   for (let i = 0; i < records.length; i++) {
-    const raw = records[i];
+    const raw = records[i] as Record<string, string> | undefined;
+    if (!raw) continue;
     // Map empty strings to undefined so defaults apply
     const cleaned: Record<string, string | undefined> = {};
     for (const [key, value] of Object.entries(raw)) {
