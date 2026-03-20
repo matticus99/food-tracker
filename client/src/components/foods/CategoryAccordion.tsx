@@ -105,8 +105,8 @@ function AccordionCard({
 
   return (
     <div className={`${styles.card} ${expanded ? styles.expanded : ''}`}>
-      <button className={styles.header} onClick={onToggle}>
-        {renaming ? (
+      {renaming ? (
+        <div className={styles.header}>
           <input
             ref={renameRef}
             className={styles.renameInput}
@@ -118,24 +118,27 @@ function AccordionCard({
               if (e.key === 'Enter') commitRename();
               if (e.key === 'Escape') { setRenameValue(label); setRenaming(false); }
             }}
-            onClick={(e) => e.stopPropagation()}
             maxLength={50}
           />
-        ) : (
-          <span
-            className={styles.label}
-            onDoubleClick={(e) => {
+        </div>
+      ) : (
+        <button className={styles.header} onClick={onToggle}>
+          <span className={styles.label}>{label}</span>
+          <button
+            className={styles.renameBtn}
+            onClick={(e) => {
               e.stopPropagation();
               setRenameValue(label);
               setRenaming(true);
             }}
+            aria-label="Rename category"
           >
-            {label}
-          </span>
-        )}
-        <span className={styles.count}>{count}</span>
-        <span className={styles.chevron}>{expanded ? '\u25BE' : '\u25B8'}</span>
-      </button>
+            &#9998;
+          </button>
+          <span className={styles.count}>{count}</span>
+          <span className={styles.chevron}>{expanded ? '\u25BE' : '\u25B8'}</span>
+        </button>
+      )}
       <div className={styles.body}>
         <div className={styles.bodyInner}>
           {expanded && (

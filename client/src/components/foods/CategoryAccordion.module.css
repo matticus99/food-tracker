@@ -74,6 +74,33 @@
   outline: none;
 }
 
+.renameBtn {
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.header:hover .renameBtn {
+  opacity: 1;
+}
+
+.renameBtn:hover {
+  color: var(--accent-indigo);
+}
+
+@media (pointer: coarse) {
+  .renameBtn {
+    opacity: 1;
+  }
+}
+
 .body {
   display: grid;
   grid-template-rows: 0fr;
