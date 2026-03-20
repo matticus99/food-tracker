@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApi, apiFetch } from '../../hooks/useApi';
-import { getCategoryLabel, type CategoryConfig } from '../../constants/categories';
+import { getAllCategories, getCategoryLabel, type CategoryConfig } from '../../constants/categories';
+import { TIME_BLOCKS, hourToBlock } from '../../constants/timeBlocks';
 import styles from './AddFoodModal.module.css';
 
 interface Food {
@@ -30,45 +31,142 @@ interface Props {
   categoryConfig?: CategoryConfig | null;
 }
 
-const TIME_BLOCKS = [
-  { key: 'early-morning', label: 'Early AM', hour: 2, icon: '🌙' },
-  { key: 'morning', label: 'Morning', hour: 7, icon: '🌅' },
-  { key: 'midday', label: 'Midday', hour: 11, icon: '☀️' },
-  { key: 'afternoon', label: 'Afternoon', hour: 15, icon: '🌤️' },
-  { key: 'evening', label: 'Evening', hour: 19, icon: '🌇' },
-  { key: 'night', label: 'Night', hour: 22, icon: '🌑' },
-];
+function ModalAccordionCard({
+  categoryKey,
+  label,
+  count,
+  expanded,
+  onToggle,
+  search,
+  selections,
+  onToggleFood,
+  onSelectAll,
+}: {
+  categoryKey: string;
+  label: string;
+  count: number;
+  expanded: boolean;
+  onToggle: () => void;
+  search: string;
+  selections: Map<string, SelectedFood>;
+  onToggleFood: (food: Food) => void;
+  onSelectAll: (foods: Food[]) => void;
+}) {
+  const params = new URLSearchParams({ category: categoryKey });
+  if (search) params.set('search', search);
+  const apiPath = expanded ? `/foods?${params}` : null;
+  const { data: foods, loading } = useApi<Food[]>(apiPath);
 
-function hourToBlock(h: number): string {
-  if (h < 5) return 'early-morning';
-  if (h < 10) return 'morning';
-  if (h < 13) return 'midday';
-  if (h < 17) return 'afternoon';
-  if (h < 21) return 'evening';
-  return 'night';
+  const allSelected = foods && foods.length > 0 && foods.every((f) => selections.has(f.id));
+
+  return (
+    <div className={`${styles.accordionCard} ${expanded ? styles.accordionExpanded : ''}`}>
+      <button className={styles.accordionHeader} onClick={onToggle}>
+        <span className={styles.accordionLabel}>{label}</span>
+        <span className={styles.accordionCount}>{count}</span>
+        <span className={styles.accordionChevron}>{expanded ? '\u25BE' : '\u25B8'}</span>
+      </button>
+      <div className={styles.accordionBody}>
+        <div className={styles.accordionBodyInner}>
+          {expanded && (
+            <>
+              {loading && !foods ? (
+                <div className={styles.accordionLoading}>Loading...</div>
+              ) : foods && foods.length > 0 ? (
+                <>
+                  <button
+                    className={`${styles.selectAllBtn} ${allSelected ? styles.selectAllActive : ''}`}
+                    onClick={() => onSelectAll(foods)}
+                  >
+                    {allSelected ? 'Deselect All' : 'Select All'}
+                  </button>
+                  {foods.map((food) => {
+                    const isSelected = selections.has(food.id);
+                    return (
+                      <button
+                        key={food.id}
+                        className={`${styles.foodItem} ${isSelected ? styles.foodItemSelected : ''}`}
+                        onClick={() => onToggleFood(food)}
+                      >
+                        <span className={styles.checkmark}>{isSelected ? '\u2713' : ''}</span>
+                        <span className={styles.foodEmoji}>{food.emoji || '\u{1F37D}\uFE0F'}</span>
+                        <div className={styles.foodInfo}>
+                          <span className={styles.foodName}>{food.name}</span>
+                          <span className={styles.foodMeta}>
+                            {food.servingLabel}
+                            {food.calories ? ` \u00B7 ${Number(food.calories)} cal` : ''}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </>
+              ) : (
+                <p className={styles.accordionEmpty}>No foods</p>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function AddFoodModal({ open, hour, date, onClose, onAdded, categoryConfig }: Props) {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<string>('favorites');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>('favorites');
   const [selections, setSelections] = useState<Map<string, SelectedFood>>(new Map());
   const [submitting, setSubmitting] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState(() => hourToBlock(hour));
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const params = new URLSearchParams();
-  if (search) params.set('search', search);
-  if (filter !== 'all') params.set('category', filter);
-  const query = params.toString() ? `?${params}` : '';
-  const { data: foods } = useApi<Food[]>(open ? `/foods${query}` : null);
+  const countsQs = debouncedSearch ? `?search=${encodeURIComponent(debouncedSearch)}` : '';
+  const { data: counts } = useApi<Record<string, number>>(open ? `/foods/counts${countsQs}` : null);
+
+  // Debounce search
+  useEffect(() => {
+    timerRef.current = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timerRef.current);
+  }, [search]);
 
   useEffect(() => {
     if (open) {
       setSearch('');
-      setFilter('favorites');
+      setDebouncedSearch('');
+      setExpandedCategory('favorites');
       setSelections(new Map());
       setSelectedBlock(hourToBlock(hour));
     }
   }, [open, hour]);
+
+  // Auto-expand first matching category on search
+  const prevSearch = useRef(debouncedSearch);
+  useEffect(() => {
+    if (debouncedSearch && debouncedSearch !== prevSearch.current && counts) {
+      const allCats = getAllCategories(categoryConfig);
+      const dbOnly = Object.keys(counts).filter((k) => !allCats.includes(k) && (counts[k] ?? 0) > 0);
+      const all = [...allCats, ...dbOnly];
+      const first = all.find((k) => (counts[k] ?? 0) > 0);
+      setExpandedCategory(first ?? null);
+    } else if (!debouncedSearch && prevSearch.current) {
+      setExpandedCategory('favorites');
+    }
+    prevSearch.current = debouncedSearch;
+  }, [debouncedSearch, counts, categoryConfig]);
+
+  const allCategories = (() => {
+    const defined = getAllCategories(categoryConfig);
+    const dbOnly = counts
+      ? Object.keys(counts).filter((k) => !defined.includes(k) && (counts[k] ?? 0) > 0)
+      : [];
+    return [...defined, ...dbOnly];
+  })();
+
+  const visibleCategories = allCategories.filter((key) => {
+    if (!debouncedSearch) return true;
+    return (counts?.[key] ?? 0) > 0;
+  });
 
   function toggleFood(food: Food) {
     setSelections(prev => {
@@ -77,6 +175,21 @@ export default function AddFoodModal({ open, hour, date, onClose, onAdded, categ
         next.delete(food.id);
       } else {
         next.set(food.id, { food, servings: 1 });
+      }
+      return next;
+    });
+  }
+
+  function handleSelectAll(foods: Food[]) {
+    setSelections(prev => {
+      const next = new Map(prev);
+      const allSelected = foods.every((f) => next.has(f.id));
+      if (allSelected) {
+        foods.forEach((f) => next.delete(f.id));
+      } else {
+        foods.forEach((f) => {
+          if (!next.has(f.id)) next.set(f.id, { food: f, servings: 1 });
+        });
       }
       return next;
     });
@@ -138,30 +251,11 @@ export default function AddFoodModal({ open, hour, date, onClose, onAdded, categ
           ))}
         </div>
 
-        <div className={styles.filterTabs}>
-          {[
-            { value: 'favorites', label: getCategoryLabel('favorites', categoryConfig) },
-            ...(categoryConfig?.pinnedCategories ?? []).map((key) => ({
-              value: key,
-              label: getCategoryLabel(key, categoryConfig),
-            })),
-            { value: 'all', label: 'All Foods' },
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              className={`${styles.filterTab} ${filter === tab.value ? styles.filterTabActive : ''}`}
-              onClick={() => setFilter(tab.value)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
         {selections.size > 0 && (
           <div className={styles.selectionTray}>
             {Array.from(selections.values()).map(({ food, servings }) => (
               <div key={food.id} className={styles.chip}>
-                <span className={styles.chipEmoji}>{food.emoji || '🍽️'}</span>
+                <span className={styles.chipEmoji}>{food.emoji || '\u{1F37D}\uFE0F'}</span>
                 <div className={styles.chipStepper}>
                   <button className={styles.chipStepperBtn} onClick={() => updateServings(food.id, -0.5)}>−</button>
                   <span className={styles.chipCount}>{servings}</span>
@@ -174,28 +268,22 @@ export default function AddFoodModal({ open, hour, date, onClose, onAdded, categ
         )}
 
         <div className={styles.list}>
-          {foods?.map((food) => {
-            const isSelected = selections.has(food.id);
-            return (
-              <button
-                key={food.id}
-                className={`${styles.foodItem} ${isSelected ? styles.foodItemSelected : ''}`}
-                onClick={() => toggleFood(food)}
-              >
-                <span className={styles.checkmark}>{isSelected ? '✓' : ''}</span>
-                <span className={styles.foodEmoji}>{food.emoji || '🍽️'}</span>
-                <div className={styles.foodInfo}>
-                  <span className={styles.foodName}>{food.name}</span>
-                  <span className={styles.foodMeta}>
-                    {food.servingLabel}
-                    {food.calories ? ` · ${Number(food.calories)} cal` : ''}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-          {foods?.length === 0 && (
-            <p className={styles.empty}>No foods found</p>
+          {visibleCategories.map((key) => (
+            <ModalAccordionCard
+              key={key}
+              categoryKey={key}
+              label={getCategoryLabel(key, categoryConfig)}
+              count={counts?.[key] ?? 0}
+              expanded={expandedCategory === key}
+              onToggle={() => setExpandedCategory((prev) => (prev === key ? null : key))}
+              search={debouncedSearch}
+              selections={selections}
+              onToggleFood={toggleFood}
+              onSelectAll={handleSelectAll}
+            />
+          ))}
+          {debouncedSearch && visibleCategories.length === 0 && (
+            <p className={styles.empty}>No foods match your search</p>
           )}
         </div>
 

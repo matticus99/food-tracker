@@ -5,6 +5,7 @@ import { dailyIntake } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { AppError } from '../middleware/errorHandler.js';
 import { importMacroFactor } from '../services/macrofactorImport.js';
+import { importCsvFoods } from '../services/csvImport.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -43,6 +44,24 @@ router.get('/status', async (req, res, next) => {
       .limit(1);
 
     res.json({ hasImportedData: !!imported });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/import/csv — upload .csv file of foods
+router.post('/csv', upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw new AppError(400, 'No file uploaded. Send as multipart form with field name "file"');
+    }
+
+    if (!req.file.originalname.toLowerCase().endsWith('.csv')) {
+      throw new AppError(400, 'Only .csv files are supported');
+    }
+
+    const result = await importCsvFoods(req.file.buffer, req.userId);
+    res.json(result);
   } catch (err) {
     next(err);
   }

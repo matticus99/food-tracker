@@ -1,11 +1,40 @@
 import { Router } from 'express';
-import { eq, and, ilike } from 'drizzle-orm';
+import { eq, and, ilike, count } from 'drizzle-orm';
 import { db } from '../db/connection.js';
 import { foods } from '../db/schema.js';
 import { AppError, validate } from '../middleware/errorHandler.js';
 import { foodCreateSchema, foodUpdateSchema, validateUuidParam } from '../validation/schemas.js';
 
 const router = Router();
+
+// GET /api/foods/counts?search= — food count per category
+router.get('/counts', async (req, res, next) => {
+  try {
+    const { search } = req.query;
+
+    const conditions = [eq(foods.userId, req.userId)];
+
+    if (search && typeof search === 'string') {
+      const escaped = search.replace(/[%_\\]/g, '\\$&');
+      conditions.push(ilike(foods.name, `%${escaped}%`));
+    }
+
+    const rows = await db
+      .select({ category: foods.category, count: count() })
+      .from(foods)
+      .where(and(...conditions))
+      .groupBy(foods.category);
+
+    const result: Record<string, number> = {};
+    for (const row of rows) {
+      result[row.category] = row.count;
+    }
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
 
 // GET /api/foods?category=&search=
 router.get('/', async (req, res, next) => {
@@ -15,7 +44,7 @@ router.get('/', async (req, res, next) => {
     const conditions = [eq(foods.userId, req.userId)];
 
     if (category && typeof category === 'string' && category !== 'all') {
-      conditions.push(eq(foods.category, category as typeof foods.category.enumValues[number]));
+      conditions.push(eq(foods.category, category));
     }
 
     if (search && typeof search === 'string') {

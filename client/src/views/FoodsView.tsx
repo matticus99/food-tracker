@@ -1,13 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import PageHeader from '../components/layout/PageHeader';
 import SearchBar from '../components/foods/SearchBar';
-import CategoryTabs from '../components/foods/CategoryTabs';
-import FoodDbList from '../components/foods/FoodDbList';
+import CategoryAccordion from '../components/foods/CategoryAccordion';
 import FoodForm from '../components/foods/FoodForm';
 import { Skeleton } from '../components/ui/Skeleton';
-import EmptyState from '../components/ui/EmptyState';
 import { useToast } from '../components/ui/Toast';
 import { useApi, apiFetch } from '../hooks/useApi';
+import { useDate } from '../context/DateContext';
 import type { CategoryConfig } from '../constants/categories';
 import styles from './FoodsView.module.css';
 import viewStyles from './Views.module.css';
@@ -28,18 +27,24 @@ interface Food {
 
 export default function FoodsView() {
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('favorites');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [formOpen, setFormOpen] = useState(false);
   const [editFood, setEditFood] = useState<Food | null>(null);
+  const [defaultCategory, setDefaultCategory] = useState('favorites');
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { toast } = useToast();
-  const { data: user } = useApi<{ categoryConfig: CategoryConfig | null }>('/user');
+  const { dateStr } = useDate();
+  const { data: user, refetch: refetchUser } = useApi<{ categoryConfig: CategoryConfig | null }>('/user');
 
-  const params = new URLSearchParams();
-  if (search) params.set('search', search);
-  if (category) params.set('category', category);
-  const qs = params.toString();
+  // Debounce search for API calls
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    timerRef.current = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timerRef.current);
+  }, [search]);
 
-  const { data: foods, loading, refetch } = useApi<Food[]>(`/foods${qs ? `?${qs}` : ''}`);
+  const countsQs = debouncedSearch ? `?search=${encodeURIComponent(debouncedSearch)}` : '';
+  const { data: counts, loading: countsLoading, refetch: refetchCounts } = useApi<Record<string, number>>(`/foods/counts${countsQs}`);
 
   const handleEdit = useCallback((food: Food) => {
     setEditFood(food);
@@ -50,67 +55,104 @@ export default function FoodsView() {
     async (id: string) => {
       try {
         await apiFetch(`/foods/${id}`, { method: 'DELETE' });
-        refetch();
+        setRefreshTrigger((n) => n + 1);
+        refetchCounts();
         toast('Food deleted', 'success');
       } catch {
         toast('Failed to delete food', 'error');
       }
     },
-    [refetch, toast],
+    [refetchCounts, toast],
   );
 
-  const handleAdd = useCallback(() => {
+  const handleAdd = useCallback((category?: string) => {
     setEditFood(null);
+    setDefaultCategory(category ?? 'favorites');
     setFormOpen(true);
   }, []);
 
   const handleSaved = useCallback(() => {
-    refetch();
+    setRefreshTrigger((n) => n + 1);
+    refetchCounts();
     toast(editFood ? 'Food updated' : 'Food created', 'success');
-  }, [refetch, toast, editFood]);
+  }, [refetchCounts, toast, editFood]);
 
-  const isLoading = loading && !foods;
-  const isEmpty = foods && foods.length === 0;
+  const handleAddCategory = useCallback(async (name: string) => {
+    const current = user?.categoryConfig ?? {};
+    const custom = [...(current.customCategories ?? []), name];
+    try {
+      await apiFetch('/user', {
+        method: 'PUT',
+        body: JSON.stringify({ categoryConfig: { ...current, customCategories: custom } }),
+      });
+      refetchUser();
+      toast(`Category "${name}" added`, 'success');
+    } catch {
+      toast('Failed to add category', 'error');
+    }
+  }, [user, refetchUser, toast]);
+
+  const handleLogAll = useCallback(async (foods: { id: string }[], timeHour: number) => {
+    try {
+      const entries = foods.map((f) => ({
+        foodId: f.id,
+        date: dateStr,
+        timeHour,
+        servings: 1,
+      }));
+      await apiFetch('/log/batch', {
+        method: 'POST',
+        body: JSON.stringify({ entries }),
+      });
+      toast(`Logged ${foods.length} food${foods.length > 1 ? 's' : ''}`, 'success');
+    } catch {
+      toast('Failed to log foods', 'error');
+    }
+  }, [dateStr, toast]);
+
+  const handleDeleteCategory = useCallback(async (name: string) => {
+    const current = user?.categoryConfig ?? {};
+    const custom = (current.customCategories ?? []).filter((c) => c !== name);
+    try {
+      await apiFetch('/user', {
+        method: 'PUT',
+        body: JSON.stringify({ categoryConfig: { ...current, customCategories: custom } }),
+      });
+      refetchUser();
+      refetchCounts();
+      toast(`Category "${name}" removed`, 'success');
+    } catch {
+      toast('Failed to remove category', 'error');
+    }
+  }, [user, refetchUser, refetchCounts, toast]);
+
+  const isLoading = countsLoading && !counts;
 
   return (
     <div className={viewStyles.view}>
       <PageHeader title="My Foods" />
       <div className={styles.content}>
         <SearchBar value={search} onChange={setSearch} />
-        <CategoryTabs active={category} onChange={setCategory} categoryConfig={user?.categoryConfig} />
-        <div className={styles.macroHeader}>
-          <span>Cal</span>
-          <span>P</span>
-          <span>F</span>
-          <span>C</span>
-        </div>
 
         {isLoading ? (
           <div className={styles.skeletonList}>
             {Array.from({ length: 6 }, (_, i) => (
-              <Skeleton key={i} width="100%" height="48px" radius="var(--radius-md)" />
+              <Skeleton key={i} width="100%" height="44px" radius="var(--radius-md)" />
             ))}
           </div>
-        ) : isEmpty && search ? (
-          <EmptyState
-            icon="🔍"
-            title="No results found"
-            description={`No foods match "${search}"`}
-            action={{ label: 'Clear Search', onClick: () => setSearch('') }}
-          />
-        ) : isEmpty ? (
-          <EmptyState
-            icon="🥗"
-            title="No foods yet"
-            description="Add your first custom food to get started"
-            action={{ label: 'Add Food', onClick: handleAdd }}
-          />
         ) : (
-          <FoodDbList
-            foods={foods ?? []}
+          <CategoryAccordion
+            counts={counts}
+            search={debouncedSearch}
+            categoryConfig={user?.categoryConfig}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAdd={handleAdd}
+            onLogAll={handleLogAll}
+            refreshTrigger={refreshTrigger}
+            refetchCounts={refetchCounts}
+            onAddCategory={handleAddCategory}
+            onDeleteCategory={handleDeleteCategory}
           />
         )}
       </div>
@@ -120,6 +162,7 @@ export default function FoodsView() {
         onClose={() => setFormOpen(false)}
         onSaved={handleSaved}
         categoryConfig={user?.categoryConfig}
+        defaultCategory={defaultCategory}
       />
     </div>
   );

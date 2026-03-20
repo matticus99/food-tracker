@@ -22,15 +22,10 @@ export function validateUuidParam(value: string, name = 'id'): string {
   return value;
 }
 
-const FOOD_CATEGORIES = ['favorites', 'proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks'] as const;
-const PINNABLE_CATEGORIES = ['proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks'] as const;
-
 const categoryConfigSchema = z.object({
-  labels: z.record(
-    z.string().refine((k) => (FOOD_CATEGORIES as readonly string[]).includes(k), { message: 'Invalid category key' }),
-    z.string().min(1).max(30),
-  ).optional(),
-  pinnedCategories: z.array(z.enum(PINNABLE_CATEGORIES)).max(2).optional(),
+  labels: z.record(z.string(), z.string().min(1).max(30)).optional(),
+  pinnedCategories: z.array(z.string()).max(2).optional(),
+  customCategories: z.array(z.string().min(1).max(50)).max(15).optional(),
 }).nullish();
 
 export const userUpdateSchema = z.object({
@@ -51,7 +46,7 @@ export const userUpdateSchema = z.object({
 export const foodCreateSchema = z.object({
   name: z.string().min(1, 'name is required').max(255),
   emoji: z.string().max(10).nullish(),
-  category: z.enum(['favorites', 'proteins', 'grains', 'vegetables', 'fruits', 'dairy', 'snacks', 'drinks']).default('favorites'),
+  category: z.string().min(1).max(50).default('favorites'),
   servingLabel: z.string().max(100).nullish(),
   servingGrams: z.coerce.number().min(0).max(99999).nullish(),
   calories: z.coerce.number().min(0).max(99999).nullish(),

@@ -6,33 +6,9 @@
   gap: var(--space-md);
 }
 
-.macroHeader {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-md);
-  padding: 0 var(--space-md);
-  padding-right: calc(var(--space-md) + 24px + var(--space-sm));
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.macroHeader span {
-  width: 32px;
-  text-align: right;
-}
-
 .skeletonList {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
 }
 
-@media (max-width: 640px) {
-  .macroHeader {
-    display: none;
-  }
-}

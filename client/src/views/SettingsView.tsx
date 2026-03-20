@@ -3,12 +3,13 @@ import PageHeader from '../components/layout/PageHeader';
 import SettingsGroup from '../components/settings/SettingsGroup';
 import SettingsField from '../components/settings/SettingsField';
 import ImportSection from '../components/settings/ImportSection';
+import CsvImportSection from '../components/settings/CsvImportSection';
 import TdeeBreakdownModal from '../components/settings/TdeeBreakdownModal';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { useToast } from '../components/ui/Toast';
 import { useTheme, type TextSize } from '../context/ThemeContext';
 import { useApi, apiFetch } from '../hooks/useApi';
-import { CATEGORY_KEYS, DEFAULT_CATEGORY_LABELS, type CategoryConfig } from '../constants/categories';
+import type { CategoryConfig } from '../constants/categories';
 import styles from './SettingsView.module.css';
 import viewStyles from './Views.module.css';
 
@@ -86,29 +87,6 @@ export default function SettingsView() {
     dirtyRef.current = true;
     setDirty(true);
   }, []);
-
-  const handleLabelChange = useCallback((key: string, label: string) => {
-    const current = (formRef.current as Record<string, unknown>).categoryConfig as CategoryConfig | null ?? {};
-    const labels = { ...(current.labels ?? {}) };
-    if (label && label !== DEFAULT_CATEGORY_LABELS[key]) {
-      labels[key] = label;
-    } else {
-      delete labels[key];
-    }
-    updateField('categoryConfig', { ...current, labels });
-  }, [updateField]);
-
-  const handleTogglePin = useCallback((key: string) => {
-    const current = (formRef.current as Record<string, unknown>).categoryConfig as CategoryConfig | null ?? {};
-    const pinned = [...(current.pinnedCategories ?? [])];
-    const idx = pinned.indexOf(key);
-    if (idx >= 0) {
-      pinned.splice(idx, 1);
-    } else if (pinned.length < 2) {
-      pinned.push(key);
-    }
-    updateField('categoryConfig', { ...current, pinnedCategories: pinned });
-  }, [updateField]);
 
   // Save all changes and recalculate calorie target
   const handleSave = useCallback(async () => {
@@ -335,40 +313,9 @@ export default function SettingsView() {
             </div>
 
             <div className={viewStyles.staggerIn} style={{ animationDelay: '300ms' }}>
-              <SettingsGroup title="Food Categories">
-                <p className={styles.groupHint}>Rename categories and pin up to 2 to show in the Add Food modal.</p>
-                {CATEGORY_KEYS.map((key) => {
-                  const catConfig = (form as Record<string, unknown>).categoryConfig as CategoryConfig | null;
-                  const pinned = catConfig?.pinnedCategories ?? [];
-                  const isPinned = pinned.includes(key);
-                  const canPin = key !== 'favorites' && (isPinned || pinned.length < 2);
-                  return (
-                    <div key={key} className={styles.categoryRow}>
-                      <input
-                        className={styles.categoryInput}
-                        type="text"
-                        value={catConfig?.labels?.[key] ?? DEFAULT_CATEGORY_LABELS[key]}
-                        onChange={(e) => handleLabelChange(key, e.target.value)}
-                      />
-                      {key !== 'favorites' && (
-                        <button
-                          className={`${styles.pinBtn} ${isPinned ? styles.pinned : ''}`}
-                          onClick={() => handleTogglePin(key)}
-                          disabled={!canPin}
-                          title={isPinned ? 'Unpin from Add Food' : 'Pin to Add Food'}
-                        >
-                          {isPinned ? '📌' : '📌'}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </SettingsGroup>
-            </div>
-
-            <div className={viewStyles.staggerIn} style={{ animationDelay: '360ms' }}>
               <SettingsGroup title="Data">
                 <ImportSection />
+                <CsvImportSection />
               </SettingsGroup>
             </div>
 
