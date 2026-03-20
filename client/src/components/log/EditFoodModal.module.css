@@ -3,33 +3,35 @@
   inset: 0;
   background: var(--overlay);
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   justify-content: center;
   z-index: 200;
-  padding: var(--space-md);
-  padding-bottom: calc(var(--bottomnav-height) + env(safe-area-inset-bottom, 0px) + var(--space-md));
 }
 
 @media (min-width: 768px) {
   .overlay {
     align-items: center;
-    padding-bottom: var(--space-md);
+    padding: var(--space-md);
   }
 }
 
 .modal {
   background: var(--bg-surface);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   width: 100%;
   max-width: 480px;
   display: flex;
   flex-direction: column;
   animation: slideUp 0.3s var(--ease-out);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @media (min-width: 768px) {
   .modal {
     border-radius: var(--radius-xl);
+    max-height: 90vh;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 }
 
@@ -44,6 +46,7 @@
   justify-content: space-between;
   padding: var(--space-lg);
   border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .title {
@@ -73,6 +76,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+  flex: 1;
+  overflow-y: auto;
 }
 
 .selectedFood {
@@ -134,6 +139,7 @@
   gap: var(--space-sm);
   padding: var(--space-md) var(--space-lg);
   border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
 }
 
 .unitBarBtn {
@@ -189,9 +195,73 @@
   justify-content: center;
 }
 
+/* ── Time of Day section ── */
+
+.timeSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.timeLabel {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.timeBlocks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xs);
+}
+
+.timeBlockBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-sm) var(--space-xs);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.timeBlockBtn:hover {
+  background: var(--bg-hover);
+}
+
+.timeBlockBtnActive {
+  background: var(--accent-indigo);
+  border-color: var(--accent-indigo);
+  color: white;
+}
+
+.timeBlockBtnActive:hover {
+  background: var(--accent-indigo);
+  opacity: 0.9;
+}
+
+.timeBlockIcon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.timeBlockLabel {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+
 .actions {
   display: flex;
   gap: var(--space-sm);
+  margin-top: auto;
 }
 
 .cancelBtn {

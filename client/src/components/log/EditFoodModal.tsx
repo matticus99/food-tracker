@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { apiFetch } from '../../hooks/useApi';
 import { type Unit, convertAmount, toServings, formatAmount } from '../../utils/unitConversions';
+import { TIME_BLOCKS, hourToBlock } from '../../constants/timeBlocks';
 import styles from './EditFoodModal.module.css';
 
 export interface EditEntry {
   id: string;
   servings: number;
+  timeHour: number;
   food: {
     name: string;
     emoji: string | null;
@@ -27,6 +29,7 @@ interface Props {
 export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
   const [amount, setAmount] = useState('');
   const [unit, setUnit] = useState<Unit>('g');
+  const [selectedBlock, setSelectedBlock] = useState('morning');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -39,6 +42,7 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
         setUnit('serving');
         setAmount(formatAmount(entry.servings));
       }
+      setSelectedBlock(hourToBlock(entry.timeHour));
     }
   }, [entry]);
 
@@ -98,13 +102,19 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
     setUnit(newUnit);
   }
 
+  const newTimeHour = TIME_BLOCKS.find((b) => b.key === selectedBlock)?.hour ?? entry?.timeHour ?? 12;
+
   async function handleSave() {
     if (!entry) return;
     setSaving(true);
     try {
+      const body: Record<string, unknown> = { servings: Math.max(servingsMultiplier, 0.01) };
+      if (newTimeHour !== entry.timeHour) {
+        body.timeHour = newTimeHour;
+      }
       await apiFetch(`/log/${entry.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ servings: Math.max(servingsMultiplier, 0.01) }),
+        body: JSON.stringify(body),
       });
       onSaved();
       onClose();
@@ -159,6 +169,22 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
               <span style={{ color: 'var(--accent-emerald)' }}>{macros.carbs}g C</span>
             </div>
           )}
+
+          <div className={styles.timeSection}>
+            <label className={styles.timeLabel}>Time of Day</label>
+            <div className={styles.timeBlocks}>
+              {TIME_BLOCKS.map((b) => (
+                <button
+                  key={b.key}
+                  className={`${styles.timeBlockBtn} ${selectedBlock === b.key ? styles.timeBlockBtnActive : ''}`}
+                  onClick={() => setSelectedBlock(b.key)}
+                >
+                  <span className={styles.timeBlockIcon}>{b.icon}</span>
+                  <span className={styles.timeBlockLabel}>{b.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className={styles.actions}>
             <button className={styles.cancelBtn} onClick={onClose}>Cancel</button>

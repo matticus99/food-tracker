@@ -1,5 +1,4 @@
 import { useMemo, useState, useCallback } from 'react';
-import PageHeader from '../components/layout/PageHeader';
 import DayNavigator from '../components/dashboard/DayNavigator';
 import WeekStrip from '../components/dashboard/WeekStrip';
 import CalorieRing from '../components/dashboard/CalorieRing';
@@ -75,12 +74,6 @@ export default function DashboardView() {
   const [weightModalOpen, setWeightModalOpen] = useState(false);
   const { toast } = useToast();
 
-  const dateLabel = date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-  });
-
   const { data, loading, refetch } = useApi<DashboardData>(`/dashboard?date=${dateStr}`);
 
   const logEntries = data?.log ?? null;
@@ -150,7 +143,6 @@ export default function DashboardView() {
 
   return (
     <div className={viewStyles.view}>
-      <PageHeader title="Dashboard" date={dateLabel} />
       <div className={styles.content}>
         <DayNavigator />
         <WeekStrip datesWithData={datesWithData} />

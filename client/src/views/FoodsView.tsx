@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import PageHeader from '../components/layout/PageHeader';
 import SearchBar from '../components/foods/SearchBar';
 import CategoryAccordion from '../components/foods/CategoryAccordion';
 import FoodForm from '../components/foods/FoodForm';
@@ -145,7 +144,6 @@ export default function FoodsView() {
 
   return (
     <div className={viewStyles.view}>
-      <PageHeader title="My Foods" />
       <div className={styles.content}>
         <SearchBar value={search} onChange={setSearch} />
 

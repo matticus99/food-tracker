@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import PageHeader from '../components/layout/PageHeader';
 import SettingsGroup from '../components/settings/SettingsGroup';
 import SettingsField from '../components/settings/SettingsField';
 import ImportSection from '../components/settings/ImportSection';
@@ -128,7 +127,6 @@ export default function SettingsView() {
 
   return (
     <div className={viewStyles.view}>
-      <PageHeader title="Settings" />
       <div className={styles.content}>
         {isLoading ? (
           <>

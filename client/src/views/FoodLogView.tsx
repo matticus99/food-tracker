@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react';
-import PageHeader from '../components/layout/PageHeader';
 import DayNavigator from '../components/dashboard/DayNavigator';
 import LogSummary from '../components/log/LogSummary';
 import Timeline from '../components/log/Timeline';
@@ -40,12 +39,6 @@ export default function FoodLogView() {
   const [editEntry, setEditEntry] = useState<EditEntry | null>(null);
   const { toast } = useToast();
 
-  const dateLabel = date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-  });
-
   const totals = useMemo(() => {
     if (!entries) return { calories: 0, protein: 0, fat: 0, carbs: 0 };
     return entries.reduce(
@@ -81,6 +74,7 @@ export default function FoodLogView() {
       setEditEntry({
         id: entry.id,
         servings: Number(entry.servings) || 1,
+        timeHour: entry.timeHour,
         food: entry.food,
       });
     },
@@ -106,7 +100,6 @@ export default function FoodLogView() {
 
   return (
     <div className={viewStyles.view}>
-      <PageHeader title="Food Log" date={dateLabel} />
       <div className={styles.content}>
         <DayNavigator />
         <LogSummary

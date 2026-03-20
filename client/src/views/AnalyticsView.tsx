@@ -1,4 +1,3 @@
-import PageHeader from '../components/layout/PageHeader';
 import TdeeCard from '../components/analytics/TdeeCard';
 import WeightTrendCard from '../components/analytics/WeightTrendCard';
 import AvgIntakeCard from '../components/analytics/AvgIntakeCard';
@@ -54,7 +53,6 @@ export default function AnalyticsView() {
 
   return (
     <div className={viewStyles.view}>
-      <PageHeader title="Analytics" />
       <div className={styles.grid}>
         <div className={viewStyles.staggerIn}>
           <TdeeCard data={data?.tdee ?? []} />
