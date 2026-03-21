@@ -3,6 +3,7 @@ import { users, foods, foodLog, weightLog, dailyIntake } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { AppError } from '../middleware/errorHandler.js';
 import { invalidateUserCache } from '../middleware/userMiddleware.js';
+import { verifyChecksum } from './dataExport.js';
 
 interface ImportDataSummary {
   userUpdated: boolean;
@@ -34,6 +35,11 @@ export async function importData(
   }
   if (data.appName !== 'food-tracker') {
     throw new AppError(400, 'Invalid export file: not a food-tracker export');
+  }
+
+  // Verify integrity if checksum is present (absent in legacy exports)
+  if (data.checksum && !verifyChecksum(data)) {
+    throw new AppError(400, 'Export file integrity check failed: data may have been tampered with');
   }
   if (!Array.isArray(data.foods)) {
     throw new AppError(400, 'Invalid export file: missing foods array');

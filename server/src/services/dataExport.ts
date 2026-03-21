@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { db } from '../db/connection.js';
 import { users, foods, foodLog, weightLog, dailyIntake, tdeeHistory } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
@@ -12,6 +13,23 @@ interface ExportData {
   weightLog: Record<string, unknown>[];
   dailyIntake: Record<string, unknown>[];
   tdeeHistory: Record<string, unknown>[];
+  checksum?: string;
+}
+
+const EXPORT_SECRET = process.env.SESSION_SECRET ?? 'dev-export-key';
+
+/** Compute HMAC-SHA256 checksum over the export data (excluding checksum field). */
+export function computeChecksum(data: Omit<ExportData, 'checksum'>): string {
+  const payload = JSON.stringify(data);
+  return crypto.createHmac('sha256', EXPORT_SECRET).update(payload).digest('hex');
+}
+
+/** Verify that an export's checksum matches its data. */
+export function verifyChecksum(data: Record<string, unknown>): boolean {
+  const { checksum, ...rest } = data;
+  if (typeof checksum !== 'string') return false;
+  const expected = crypto.createHmac('sha256', EXPORT_SECRET).update(JSON.stringify(rest)).digest('hex');
+  return crypto.timingSafeEqual(Buffer.from(checksum, 'hex'), Buffer.from(expected, 'hex'));
 }
 
 function toNum(val: string | null | undefined): number | null {
@@ -46,7 +64,7 @@ export async function exportData(userId: string): Promise<ExportData> {
   const foodIdToExportId = new Map<string, number>();
   foodRows.forEach((f, i) => foodIdToExportId.set(f.id, i + 1));
 
-  return {
+  const result: ExportData = {
     version: 1,
     exportedAt: new Date().toISOString(),
     appName: 'food-tracker',
@@ -103,4 +121,9 @@ export async function exportData(userId: string): Promise<ExportData> {
       weightUsed: toNum(t.weightUsed),
     })),
   };
+
+  // Sign the export for integrity verification on import
+  result.checksum = computeChecksum(result);
+
+  return result;
 }
