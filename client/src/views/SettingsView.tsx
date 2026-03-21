@@ -94,9 +94,17 @@ export default function SettingsView() {
 
     setSaving(true);
     try {
+      // Convert string fields to numbers for strict server validation
+      const data = { ...formRef.current };
+      const numericFields = ['heightInches', 'currentWeight', 'activityLevel', 'tdeeSmoothingFactor'] as const;
+      const payload: Record<string, unknown> = { ...data };
+      for (const key of numericFields) {
+        const val = data[key];
+        payload[key] = val != null && val !== '' ? Number(val) : null;
+      }
       await apiFetch<User>('/user', {
         method: 'PUT',
-        body: JSON.stringify(formRef.current),
+        body: JSON.stringify(payload),
       });
       dirtyRef.current = false;
       setDirty(false);
@@ -114,9 +122,15 @@ export default function SettingsView() {
   useEffect(() => {
     return () => {
       if (dirtyRef.current) {
+        const beaconData = { ...formRef.current };
+        const beaconPayload: Record<string, unknown> = { ...beaconData };
+        for (const k of ['heightInches', 'currentWeight', 'activityLevel', 'tdeeSmoothingFactor'] as const) {
+          const v = beaconData[k];
+          beaconPayload[k] = v != null && v !== '' ? Number(v) : null;
+        }
         navigator.sendBeacon(
           '/api/user',
-          new Blob([JSON.stringify(formRef.current)], { type: 'application/json' }),
+          new Blob([JSON.stringify(beaconPayload)], { type: 'application/json' }),
         );
       }
     };
