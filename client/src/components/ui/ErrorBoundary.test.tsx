@@ -52,14 +52,16 @@ describe('ErrorBoundary', () => {
     expect(screen.queryByText('Child is working')).not.toBeInTheDocument();
   });
 
-  it('shows error message from thrown error', () => {
+  it('shows generic error message (does not leak internal error details)', () => {
     render(
       <ErrorBoundary>
         <ErrorToggler />
       </ErrorBoundary>
     );
 
-    expect(screen.getByText('Test explosion')).toBeInTheDocument();
+    expect(screen.getByText('An unexpected error occurred. Please try again.')).toBeInTheDocument();
+    // Verify the raw error message is NOT shown to the user
+    expect(screen.queryByText('Test explosion')).not.toBeInTheDocument();
   });
 
   it('retry button resets error state', async () => {

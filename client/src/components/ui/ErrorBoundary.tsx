@@ -36,7 +36,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             <span className={styles.icon}>⚠️</span>
             <h2 className={styles.title}>Something went wrong</h2>
             <p className={styles.message}>
-              {this.state.error?.message || 'An unexpected error occurred'}
+              An unexpected error occurred. Please try again.
             </p>
             <button className={styles.retryBtn} onClick={this.handleRetry}>
               Try Again

@@ -3,16 +3,18 @@ import { z } from 'zod';
 import { db } from '../db/connection.js';
 import { foods } from '../db/schema.js';
 
+// CSV values arrive as strings — coerce is appropriate here (unlike JSON bodies)
+// but add .finite() to reject Infinity/NaN
 const csvRowSchema = z.object({
   name: z.string().min(1, 'name is required').max(255),
   category: z.string().min(1).max(50).default('favorites'),
   emoji: z.string().max(10).optional(),
   servingLabel: z.string().max(100).optional(),
-  servingGrams: z.coerce.number().min(0).max(99999).optional(),
-  calories: z.coerce.number().min(0).max(99999).optional(),
-  protein: z.coerce.number().min(0).max(99999).optional(),
-  fat: z.coerce.number().min(0).max(99999).optional(),
-  carbs: z.coerce.number().min(0).max(99999).optional(),
+  servingGrams: z.coerce.number().finite().min(0).max(99999).optional(),
+  calories: z.coerce.number().finite().min(0).max(99999).optional(),
+  protein: z.coerce.number().finite().min(0).max(99999).optional(),
+  fat: z.coerce.number().finite().min(0).max(99999).optional(),
+  carbs: z.coerce.number().finite().min(0).max(99999).optional(),
 });
 
 export interface CsvImportResult {
@@ -32,11 +34,16 @@ export async function importCsvFoods(buffer: Buffer, userId: string): Promise<Cs
     columns: true,
     skip_empty_lines: true,
     trim: true,
-    relax_column_count: true,
   });
 
   if (records.length === 0) {
     return { imported: 0, skipped: 0, errors: [{ row: 1, reason: 'File is empty or has no data rows' }] };
+  }
+
+  // Validate that required 'name' column exists in headers
+  const firstRow = records[0];
+  if (firstRow && !('name' in firstRow)) {
+    return { imported: 0, skipped: 0, errors: [{ row: 1, reason: 'Missing required "name" column in CSV header' }] };
   }
 
   if (records.length > 5000) {

@@ -18,15 +18,15 @@ describe('userUpdateSchema', () => {
     const result = userUpdateSchema.parse({
       age: 30,
       sex: 'male',
-      heightInches: '70',
-      currentWeight: '185.5',
+      heightInches: 70,
+      currentWeight: 185.5,
       objective: 'cut',
-      activityLevel: '1.5',
+      activityLevel: 1.5,
       goalPace: 500,
       proteinTarget: 150,
       fatTarget: 65,
       carbTarget: 250,
-      tdeeSmoothingFactor: '0.1',
+      tdeeSmoothingFactor: 0.1,
     });
     expect(result.age).toBe(30);
     expect(result.heightInches).toBe(70);
@@ -54,11 +54,17 @@ describe('userUpdateSchema', () => {
   });
 
   it('rejects negative weight', () => {
-    expect(() => userUpdateSchema.parse({ currentWeight: '-100' })).toThrow();
+    expect(() => userUpdateSchema.parse({ currentWeight: -100 })).toThrow();
   });
 
   it('rejects weight above maximum', () => {
-    expect(() => userUpdateSchema.parse({ currentWeight: '1501' })).toThrow();
+    expect(() => userUpdateSchema.parse({ currentWeight: 1501 })).toThrow();
+  });
+
+  it('rejects string values for numeric fields (no coercion)', () => {
+    expect(() => userUpdateSchema.parse({ heightInches: '70' })).toThrow();
+    expect(() => userUpdateSchema.parse({ currentWeight: '185' })).toThrow();
+    expect(() => userUpdateSchema.parse({ activityLevel: '1.5' })).toThrow();
   });
 
   it('rejects extra fields (strict mode)', () => {
@@ -72,17 +78,14 @@ describe('userUpdateSchema', () => {
   });
 
   it('rejects smoothing factor out of range', () => {
-    expect(() => userUpdateSchema.parse({ tdeeSmoothingFactor: '0' })).toThrow();
-    expect(() => userUpdateSchema.parse({ tdeeSmoothingFactor: '1.1' })).toThrow();
+    expect(() => userUpdateSchema.parse({ tdeeSmoothingFactor: 0 })).toThrow();
+    expect(() => userUpdateSchema.parse({ tdeeSmoothingFactor: 1.1 })).toThrow();
   });
 
-  it('coerces string numbers for decimal fields', () => {
-    const result = userUpdateSchema.parse({
-      heightInches: '72.5',
-      activityLevel: '1.25',
-    });
-    expect(result.heightInches).toBe(72.5);
-    expect(result.activityLevel).toBe(1.25);
+  it('rejects Infinity and NaN for numeric fields', () => {
+    expect(() => userUpdateSchema.parse({ heightInches: Infinity })).toThrow();
+    expect(() => userUpdateSchema.parse({ currentWeight: NaN })).toThrow();
+    expect(() => userUpdateSchema.parse({ tdeeSmoothingFactor: -Infinity })).toThrow();
   });
 });
 
@@ -95,11 +98,11 @@ describe('foodCreateSchema', () => {
       emoji: '🍗',
       category: 'proteins',
       servingLabel: '4 oz',
-      servingGrams: '113',
-      calories: '165',
-      protein: '31',
-      fat: '3.6',
-      carbs: '0',
+      servingGrams: 113,
+      calories: 165,
+      protein: 31,
+      fat: 3.6,
+      carbs: 0,
     });
     expect(result.name).toBe('Chicken Breast');
     expect(result.calories).toBe(165);
@@ -137,7 +140,7 @@ describe('foodCreateSchema', () => {
   });
 
   it('rejects negative calories', () => {
-    expect(() => foodCreateSchema.parse({ name: 'X', calories: '-10' })).toThrow();
+    expect(() => foodCreateSchema.parse({ name: 'X', calories: -10 })).toThrow();
   });
 
   it('rejects extra fields (strict mode prevents mass assignment)', () => {
@@ -151,16 +154,18 @@ describe('foodCreateSchema', () => {
     })).toThrow();
   });
 
-  it('coerces string numbers for numeric fields', () => {
-    const result = foodCreateSchema.parse({
+  it('rejects string values for numeric fields (no coercion)', () => {
+    expect(() => foodCreateSchema.parse({
       name: 'Rice',
       calories: '200',
-      protein: '4',
-      fat: '0.5',
-      carbs: '45',
-    });
-    expect(result.calories).toBe(200);
-    expect(result.fat).toBe(0.5);
+    })).toThrow();
+  });
+
+  it('rejects Infinity for numeric fields', () => {
+    expect(() => foodCreateSchema.parse({
+      name: 'Rice',
+      calories: Infinity,
+    })).toThrow();
   });
 });
 
@@ -168,7 +173,7 @@ describe('foodCreateSchema', () => {
 
 describe('foodUpdateSchema', () => {
   it('accepts partial updates', () => {
-    const result = foodUpdateSchema.parse({ calories: '200' });
+    const result = foodUpdateSchema.parse({ calories: 200 });
     expect(result.calories).toBe(200);
     expect(result.name).toBeUndefined();
   });
@@ -193,7 +198,7 @@ describe('foodLogCreateSchema', () => {
       foodId: '550e8400-e29b-41d4-a716-446655440000',
       date: '2024-03-01',
       timeHour: 12,
-      servings: '1.5',
+      servings: 1.5,
     });
     expect(result.foodId).toBe('550e8400-e29b-41d4-a716-446655440000');
     expect(result.servings).toBe(1.5);
@@ -243,7 +248,7 @@ describe('foodLogCreateSchema', () => {
       foodId: '550e8400-e29b-41d4-a716-446655440000',
       date: '2024-03-01',
       timeHour: 12,
-      servings: '0',
+      servings: 0,
     })).toThrow();
   });
 
@@ -252,7 +257,7 @@ describe('foodLogCreateSchema', () => {
       foodId: '550e8400-e29b-41d4-a716-446655440000',
       date: '2024-03-01',
       timeHour: 12,
-      servings: '-1',
+      servings: -1,
     })).toThrow();
   });
 
@@ -270,7 +275,7 @@ describe('foodLogCreateSchema', () => {
       foodId: '550e8400-e29b-41d4-a716-446655440000',
       date: '2024-03-01',
       timeHour: 12,
-      servings: '101',
+      servings: 101,
     })).toThrow();
   });
 });
@@ -279,7 +284,7 @@ describe('foodLogCreateSchema', () => {
 
 describe('foodLogUpdateSchema', () => {
   it('accepts partial update', () => {
-    const result = foodLogUpdateSchema.parse({ servings: '2' });
+    const result = foodLogUpdateSchema.parse({ servings: 2 });
     expect(result.servings).toBe(2);
   });
 
@@ -295,7 +300,7 @@ describe('foodLogUpdateSchema', () => {
   });
 
   it('rejects negative servings', () => {
-    expect(() => foodLogUpdateSchema.parse({ servings: '-5' })).toThrow();
+    expect(() => foodLogUpdateSchema.parse({ servings: -5 })).toThrow();
   });
 });
 
@@ -305,14 +310,14 @@ describe('weightCreateSchema', () => {
   it('accepts valid weight', () => {
     const result = weightCreateSchema.parse({
       date: '2024-03-01',
-      weight: '185.5',
+      weight: 185.5,
     });
     expect(result.date).toBe('2024-03-01');
     expect(result.weight).toBe(185.5);
   });
 
   it('rejects missing date', () => {
-    expect(() => weightCreateSchema.parse({ weight: '180' })).toThrow();
+    expect(() => weightCreateSchema.parse({ weight: 180 })).toThrow();
   });
 
   it('rejects missing weight', () => {
@@ -322,45 +327,51 @@ describe('weightCreateSchema', () => {
   it('rejects invalid date format', () => {
     expect(() => weightCreateSchema.parse({
       date: 'not-a-date',
-      weight: '180',
+      weight: 180,
     })).toThrow();
   });
 
   it('rejects zero weight', () => {
     expect(() => weightCreateSchema.parse({
       date: '2024-03-01',
-      weight: '0',
+      weight: 0,
     })).toThrow();
   });
 
   it('rejects negative weight', () => {
     expect(() => weightCreateSchema.parse({
       date: '2024-03-01',
-      weight: '-100',
+      weight: -100,
     })).toThrow();
   });
 
   it('rejects weight above 1500', () => {
     expect(() => weightCreateSchema.parse({
       date: '2024-03-01',
-      weight: '1501',
+      weight: 1501,
     })).toThrow();
   });
 
   it('rejects extra fields', () => {
     expect(() => weightCreateSchema.parse({
       date: '2024-03-01',
-      weight: '180',
+      weight: 180,
       id: 'x',
     })).toThrow();
   });
 
-  it('coerces string weight to number', () => {
-    const result = weightCreateSchema.parse({
+  it('rejects string weight (no coercion)', () => {
+    expect(() => weightCreateSchema.parse({
       date: '2024-03-01',
       weight: '185',
-    });
-    expect(typeof result.weight).toBe('number');
+    })).toThrow();
+  });
+
+  it('rejects Infinity weight', () => {
+    expect(() => weightCreateSchema.parse({
+      date: '2024-03-01',
+      weight: Infinity,
+    })).toThrow();
   });
 });
 
