@@ -70,7 +70,7 @@ interface DashboardData {
 }
 
 export default function DashboardView() {
-  const { date, dateStr } = useDate();
+  const { dateStr } = useDate();
   const [weightModalOpen, setWeightModalOpen] = useState(false);
   const { toast } = useToast();
 

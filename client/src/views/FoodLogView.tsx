@@ -31,7 +31,7 @@ interface LogEntry {
 }
 
 export default function FoodLogView() {
-  const { date, dateStr } = useDate();
+  const { dateStr } = useDate();
   const { data: entries, loading, refetch } = useApi<LogEntry[]>(`/log?date=${dateStr}`);
   const { data: user } = useApi<{ categoryConfig: CategoryConfig | null }>('/user');
   const [modalOpen, setModalOpen] = useState(false);
