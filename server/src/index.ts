@@ -4,7 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import { doubleCsrf } from 'csrf-csrf';
 import userRoutes from './routes/user.js';
@@ -95,13 +95,13 @@ app.use(morgan('short'));
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
-  keyGenerator: (req) => req.userId ?? req.ip ?? 'unknown',
+  keyGenerator: (req) => req.userId ?? ipKeyGenerator(req.ip ?? '127.0.0.1'),
 });
 const importLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
   message: { error: 'Too many import requests, try again later' },
-  keyGenerator: (req) => req.userId ?? req.ip ?? 'unknown',
+  keyGenerator: (req) => req.userId ?? ipKeyGenerator(req.ip ?? '127.0.0.1'),
 });
 app.use('/api', apiLimiter);
 app.post('/api/import/*', importLimiter);

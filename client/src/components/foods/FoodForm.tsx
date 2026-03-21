@@ -220,10 +220,10 @@ export default function FoodForm({ open, food, onClose, onSaved, categoryConfig,
         category,
         servingLabel,
         servingGrams: sg,
-        calories: calories || null,
-        protein: protein || null,
-        fat: fat || null,
-        carbs: carbs || null,
+        calories: calories ? Number(calories) : null,
+        protein: protein ? Number(protein) : null,
+        fat: fat ? Number(fat) : null,
+        carbs: carbs ? Number(carbs) : null,
       };
       if (isEdit) {
         await apiFetch(`/foods/${food!.id}`, { method: 'PUT', body: JSON.stringify(body) });
