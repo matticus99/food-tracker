@@ -33,7 +33,7 @@ app.use(morgan('short'));
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
 const importLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, message: { error: 'Too many import requests, try again later' } });
 app.use('/api', apiLimiter);
-app.use('/api/import', importLimiter);
+app.post('/api/import/*', importLimiter);
 
 // ── Request timeout (30s) ──
 app.use((_req, res, next) => {

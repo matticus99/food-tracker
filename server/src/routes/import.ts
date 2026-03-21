@@ -6,6 +6,8 @@ import { eq } from 'drizzle-orm';
 import { AppError } from '../middleware/errorHandler.js';
 import { importMacroFactor } from '../services/macrofactorImport.js';
 import { importCsvFoods } from '../services/csvImport.js';
+import { exportData } from '../services/dataExport.js';
+import { importData } from '../services/dataImport.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
@@ -62,6 +64,43 @@ router.post('/csv', upload.single('file'), async (req, res, next) => {
 
     const result = await importCsvFoods(req.file.buffer, req.userId);
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/import/export — download all user data as JSON
+router.get('/export', async (req, res, next) => {
+  try {
+    const data = await exportData(req.userId);
+    const dateStr = new Date().toISOString().split('T')[0];
+    res.setHeader('Content-Disposition', `attachment; filename="food-tracker-export-${dateStr}.json"`);
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/import/data — import from a food-tracker JSON export
+router.post('/data', upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw new AppError(400, 'No file uploaded. Send as multipart form with field name "file"');
+    }
+
+    if (!req.file.originalname.toLowerCase().endsWith('.json')) {
+      throw new AppError(400, 'Only .json files are supported');
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(req.file.buffer.toString('utf8'));
+    } catch {
+      throw new AppError(400, 'Invalid JSON file');
+    }
+
+    const summary = await importData(parsed, req.userId);
+    res.json({ success: true, summary });
   } catch (err) {
     next(err);
   }

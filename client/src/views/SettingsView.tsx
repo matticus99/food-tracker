@@ -3,6 +3,7 @@ import SettingsGroup from '../components/settings/SettingsGroup';
 import SettingsField from '../components/settings/SettingsField';
 import ImportSection from '../components/settings/ImportSection';
 import CsvImportSection from '../components/settings/CsvImportSection';
+import DataExportImportSection from '../components/settings/DataExportImportSection';
 import TdeeBreakdownModal from '../components/settings/TdeeBreakdownModal';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { useToast } from '../components/ui/Toast';
@@ -314,6 +315,7 @@ export default function SettingsView() {
               <SettingsGroup title="Data">
                 <ImportSection />
                 <CsvImportSection />
+                <DataExportImportSection />
               </SettingsGroup>
             </div>
 
