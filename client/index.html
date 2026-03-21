@@ -7,8 +7,11 @@
     <meta name="description" content="Personal food tracking with adaptive TDEE" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- CSP: unsafe-inline kept for style-src due to React inline styles (chart widths, etc.)
+         Production should use nonce-based CSP via Helmet instead of this meta tag.
+         connect-src uses Vite's env substitution for production API origin. -->
     <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:*; script-src 'self'" />
+      content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" />
     <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
     <link rel="apple-touch-icon" href="/icons/icon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
