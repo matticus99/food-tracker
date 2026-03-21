@@ -1,0 +1,140 @@
+import { Router } from 'express';
+import { eq, and, ilike, count } from 'drizzle-orm';
+import { db } from '../db/connection.js';
+import { foods } from '../db/schema.js';
+import { AppError, validate } from '../middleware/errorHandler.js';
+import { foodCreateSchema, foodUpdateSchema, validateUuidParam } from '../validation/schemas.js';
+
+const router = Router();
+
+// GET /api/foods/counts?search= — food count per category
+router.get('/counts', async (req, res, next) => {
+  try {
+    const { search } = req.query;
+
+    const conditions = [eq(foods.userId, req.userId)];
+
+    if (search && typeof search === 'string') {
+      const escaped = search.replace(/[%_\\]/g, '\\$&');
+      conditions.push(ilike(foods.name, `%${escaped}%`));
+    }
+
+    const rows = await db
+      .select({ category: foods.category, count: count() })
+      .from(foods)
+      .where(and(...conditions))
+      .groupBy(foods.category);
+
+    const result: Record<string, number> = {};
+    for (const row of rows) {
+      result[row.category] = row.count;
+    }
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/foods?category=&search=
+router.get('/', async (req, res, next) => {
+  try {
+    const { category, search } = req.query;
+
+    const conditions = [eq(foods.userId, req.userId)];
+
+    if (category && typeof category === 'string' && category !== 'all') {
+      conditions.push(eq(foods.category, category));
+    }
+
+    if (search && typeof search === 'string') {
+      const escaped = search.replace(/[%_\\]/g, '\\$&');
+      conditions.push(ilike(foods.name, `%${escaped}%`));
+    }
+
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 50, 1), 200);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+
+    const result = await db
+      .select()
+      .from(foods)
+      .where(and(...conditions))
+      .orderBy(foods.name)
+      .limit(limit)
+      .offset(offset);
+
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/foods
+router.post('/', async (req, res, next) => {
+  try {
+    const { name, emoji, category, servingLabel, servingGrams,
+            calories, protein, fat, carbs } = validate(foodCreateSchema, req.body);
+
+    const [food] = await db
+      .insert(foods)
+      .values({
+        name, emoji, category, servingLabel, userId: req.userId,
+        calories: calories != null ? String(calories) : null,
+        protein: protein != null ? String(protein) : null,
+        fat: fat != null ? String(fat) : null,
+        carbs: carbs != null ? String(carbs) : null,
+        servingGrams: servingGrams != null ? String(servingGrams) : null,
+      })
+      .returning();
+
+    res.status(201).json(food);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/foods/:id
+router.put('/:id', async (req, res, next) => {
+  try {
+    const validated = validate(foodUpdateSchema, req.body);
+
+    const id = validateUuidParam(req.params.id!);
+    const { servingGrams, calories, protein, fat, carbs, ...rest } = validated;
+    const [food] = await db
+      .update(foods)
+      .set({
+        ...rest,
+        ...(servingGrams !== undefined && { servingGrams: servingGrams != null ? String(servingGrams) : null }),
+        ...(calories !== undefined && { calories: calories != null ? String(calories) : null }),
+        ...(protein !== undefined && { protein: protein != null ? String(protein) : null }),
+        ...(fat !== undefined && { fat: fat != null ? String(fat) : null }),
+        ...(carbs !== undefined && { carbs: carbs != null ? String(carbs) : null }),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(foods.id, id), eq(foods.userId, req.userId)))
+      .returning();
+
+    if (!food) throw new AppError(404, 'Food not found');
+    res.json(food);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/foods/:id
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const id = validateUuidParam(req.params.id!);
+    const [food] = await db
+      .delete(foods)
+      .where(and(eq(foods.id, id), eq(foods.userId, req.userId)))
+      .returning();
+
+    if (!food) throw new AppError(404, 'Food not found');
+    res.json({ deleted: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;

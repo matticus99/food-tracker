@@ -1,0 +1,28 @@
+.legend {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  margin-top: var(--space-sm);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.line {
+  width: 12px;
+  height: 1px;
+  background: var(--accent-indigo);
+  border-top: 1px dashed var(--accent-indigo);
+}

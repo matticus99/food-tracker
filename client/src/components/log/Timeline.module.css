@@ -1,0 +1,172 @@
+.cardList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding-top: var(--space-sm);
+}
+
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border-subtle);
+  color: #000;
+}
+
+.cardHeaderLeft {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  position: relative;
+  z-index: 1;
+}
+
+.cardLabel {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #000;
+  text-shadow: none;
+}
+
+.cardRange {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #000;
+  opacity: 0.7;
+  text-shadow: none;
+}
+
+.cardHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  position: relative;
+  z-index: 1;
+}
+
+.cardCals {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #000;
+  text-shadow: none;
+}
+
+.cardCals::after {
+  content: " cal";
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.addBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid #000;
+  background: none;
+  color: #000;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.addBtn:hover {
+  border-color: var(--accent-indigo);
+  color: var(--accent-indigo);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.cardEntries {
+  display: flex;
+  flex-direction: column;
+}
+
+.cardEntries > *:not(:last-child) {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ── Time-of-day gradients ── */
+
+.card .cardHeader {
+  position: relative;
+}
+
+.card .cardHeader::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Early Morning — Easter lavender */
+.card[data-time="early-morning"] .cardHeader::before {
+  background: #d0bfff;
+}
+.card[data-time="early-morning"] {
+  border-color: rgba(177, 151, 252, 0.4);
+}
+
+/* Morning — Easter peach/coral */
+.card[data-time="morning"] .cardHeader::before {
+  background: #fcc2d7;
+}
+.card[data-time="morning"] {
+  border-color: rgba(255, 168, 168, 0.4);
+}
+
+/* Midday — Easter mint/spring green */
+.card[data-time="midday"] .cardHeader::before {
+  background: #96f2a7;
+}
+.card[data-time="midday"] {
+  border-color: rgba(105, 219, 124, 0.4);
+}
+
+/* Afternoon — Easter sunny yellow */
+.card[data-time="afternoon"] .cardHeader::before {
+  background: #ffec99;
+}
+.card[data-time="afternoon"] {
+  border-color: rgba(255, 212, 59, 0.4);
+}
+
+/* Evening — Easter robin egg blue */
+.card[data-time="evening"] .cardHeader::before {
+  background: #99e9f2;
+}
+.card[data-time="evening"] {
+  border-color: rgba(102, 217, 232, 0.4);
+}
+
+/* Night — Easter soft lilac/rose */
+.card[data-time="night"] .cardHeader::before {
+  background: #eebefa;
+}
+.card[data-time="night"] {
+  border-color: rgba(229, 153, 247, 0.35);
+}
+
+/* Light theme */
+[data-theme="light"] .card .cardHeader::before {
+  opacity: 0.5;
+}

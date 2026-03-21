@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="96" fill="#0B0C10"/>
+  <rect x="16" y="16" width="480" height="480" rx="80" fill="url(#bg)"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0%" stop-color="#13151B"/>
+      <stop offset="100%" stop-color="#0B0C10"/>
+    </linearGradient>
+    <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <!-- Flame/Fuel icon -->
+  <path d="M256 80c0 0-100 120-100 200c0 55.23 44.77 100 100 100s100-44.77 100-100C356 200 256 80 256 80z"
+        fill="url(#grad)" opacity="0.9"/>
+  <path d="M256 180c0 0-50 60-50 100c0 27.61 22.39 50 50 50s50-22.39 50-50C306 240 256 180 256 180z"
+        fill="#0B0C10" opacity="0.6"/>
+  <path d="M256 230c0 0-25 30-25 50c0 13.81 11.19 25 25 25s25-11.19 25-25C281 260 256 230 256 230z"
+        fill="url(#grad)" opacity="0.7"/>
+  <!-- F letter -->
+  <text x="256" y="440" font-family="sans-serif" font-size="80" font-weight="800" fill="#F1F5F9" text-anchor="middle" dominant-baseline="auto" opacity="0.15">FUEL</text>
+</svg>

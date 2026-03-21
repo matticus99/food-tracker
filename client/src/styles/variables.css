@@ -1,0 +1,120 @@
+/* ═══════════════════════════════════════
+   DESIGN SYSTEM — CSS VARIABLES
+   Theme-aware tokens from wireframe
+═══════════════════════════════════════ */
+
+:root {
+  /* Typography */
+  --font-display: 'Sora', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+
+  /* Spacing scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 150ms var(--ease-out);
+  --transition-medium: 300ms var(--ease-out);
+  --transition-slow: 500ms var(--ease-out);
+
+  /* Accent colors (shared across themes) */
+  --accent-indigo: #6366F1;
+  --accent-indigo-light: #818CF8;
+  --accent-orange: #F97316;
+  --accent-orange-light: #FB923C;
+  --accent-emerald: #10B981;
+  --accent-rose: #F43F5E;
+  --accent-amber: #F59E0B;
+  --accent-cyan: #06B6D4;
+  --accent-violet: #8B5CF6;
+
+  /* Ring colors */
+  --ring-calorie: var(--accent-indigo);
+  --ring-protein: var(--accent-cyan);
+  --ring-fat: var(--accent-orange);
+  --ring-carb: var(--accent-emerald);
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --bottomnav-height: 72px;
+  --content-max-width: 960px;
+
+  /* Safe area insets (activated by viewport-fit=cover) */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+}
+
+/* ── Dark Theme ── */
+[data-theme="dark"] {
+  --bg-base: #0B0C10;
+  --bg-surface: #13151B;
+  --bg-elevated: #1B1D25;
+  --bg-hover: #22242E;
+  --bg-active: #2A2D38;
+  --bg-input: #1B1D25;
+  --bg-nav: rgba(13, 14, 19, 0.85);
+  --bg-header: #101218;
+
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --text-inverse: #0F172A;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+
+  --overlay: rgba(0, 0, 0, 0.6);
+  --ring-track: rgba(255, 255, 255, 0.08);
+  --progress-track: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Light Theme ── */
+[data-theme="light"] {
+  --bg-base: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F1F5F9;
+  --bg-hover: #E2E8F0;
+  --bg-active: #CBD5E1;
+  --bg-input: #FFFFFF;
+  --bg-nav: rgba(248, 250, 252, 0.85);
+  --bg-header: #F0F2F5;
+
+  --border-subtle: rgba(0, 0, 0, 0.04);
+  --border-default: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #94A3B8;
+  --text-inverse: #F1F5F9;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.1);
+
+  --overlay: rgba(0, 0, 0, 0.3);
+  --ring-track: rgba(0, 0, 0, 0.06);
+  --progress-track: rgba(0, 0, 0, 0.06);
+}

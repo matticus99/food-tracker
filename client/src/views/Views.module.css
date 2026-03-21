@@ -1,0 +1,43 @@
+.view {
+  animation: fadeIn 0.35s var(--ease-out);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl) var(--space-md);
+  color: var(--text-tertiary);
+  gap: var(--space-md);
+}
+
+.emptyIcon {
+  font-size: 3rem;
+}
+
+.empty p {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Shared stagger-in animation for child elements */
+.staggerIn {
+  animation: staggerFadeIn 0.4s var(--ease-out) both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes staggerFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view, .staggerIn {
+    animation: none;
+  }
+}

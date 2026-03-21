@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Package manager locks (keep package-lock.json if using npm)
+yarn.lock
+pnpm-lock.yaml
+test-data/MacroFactor-20260226190955.xlsx
+.claude/settings.local.json
+client/.vite/deps/_metadata.json
+client/.vite/deps/package.json
+docs/internal/

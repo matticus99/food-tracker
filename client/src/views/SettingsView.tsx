@@ -1,0 +1,358 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import SettingsGroup from '../components/settings/SettingsGroup';
+import SettingsField from '../components/settings/SettingsField';
+import ImportSection from '../components/settings/ImportSection';
+import CsvImportSection from '../components/settings/CsvImportSection';
+import DataExportImportSection from '../components/settings/DataExportImportSection';
+import TdeeBreakdownModal from '../components/settings/TdeeBreakdownModal';
+import { SkeletonCard } from '../components/ui/Skeleton';
+import { useToast } from '../components/ui/Toast';
+import { useTheme, type TextSize } from '../context/ThemeContext';
+import { useApi, apiFetch } from '../hooks/useApi';
+import type { CategoryConfig } from '../constants/categories';
+import styles from './SettingsView.module.css';
+import viewStyles from './Views.module.css';
+
+interface ComputedCalorieTarget {
+  calorieTarget: number;
+  tdeeUsed: number;
+  tdeeSource: 'adaptive' | 'estimated';
+  objectiveOffset: number;
+  objective: string;
+  goalPace: number;
+}
+
+interface User {
+  id: string;
+  age: number;
+  sex: string;
+  heightInches: string;
+  currentWeight: string;
+  objective: string;
+  activityLevel: string;
+  goalPace: number;
+  proteinTarget: number;
+  fatTarget: number;
+  carbTarget: number;
+  tdeeSmoothingFactor: string;
+  categoryConfig: CategoryConfig | null;
+  computedCalorieTarget: ComputedCalorieTarget | null;
+}
+
+type FormData = Omit<User, 'id' | 'computedCalorieTarget'>;
+
+function pickFormData(user: User): FormData {
+  return {
+    age: user.age,
+    sex: user.sex,
+    heightInches: user.heightInches,
+    currentWeight: user.currentWeight,
+    objective: user.objective,
+    activityLevel: user.activityLevel,
+    goalPace: user.goalPace,
+    proteinTarget: user.proteinTarget,
+    fatTarget: user.fatTarget,
+    carbTarget: user.carbTarget,
+    tdeeSmoothingFactor: user.tdeeSmoothingFactor,
+    categoryConfig: user.categoryConfig,
+  };
+}
+
+export default function SettingsView() {
+  const { theme, setTheme, textSize, setTextSize } = useTheme();
+  const { data: user, loading, refetch } = useApi<User>('/user');
+  const [form, setForm] = useState<Partial<FormData>>({});
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [showTdeeBreakdown, setShowTdeeBreakdown] = useState(false);
+  const { toast } = useToast();
+
+  const formRef = useRef<Partial<FormData>>({});
+  const dirtyRef = useRef(false);
+
+  // Sync form from server data (skip if user has unsaved edits)
+  useEffect(() => {
+    if (user && !dirtyRef.current) {
+      const data = pickFormData(user);
+      setForm(data);
+      formRef.current = data;
+    }
+  }, [user]);
+
+  // Update a single field locally (no auto-save)
+  const updateField = useCallback((field: string, value: unknown) => {
+    const next = { ...formRef.current, [field]: value };
+    formRef.current = next;
+    setForm(next);
+    dirtyRef.current = true;
+    setDirty(true);
+  }, []);
+
+  // Save all changes and recalculate calorie target
+  const handleSave = useCallback(async () => {
+    if (!dirtyRef.current || saving) return;
+
+    setSaving(true);
+    try {
+      // Convert string fields to numbers for strict server validation
+      const data = { ...formRef.current };
+      const numericFields = ['heightInches', 'currentWeight', 'activityLevel', 'tdeeSmoothingFactor'] as const;
+      const payload: Record<string, unknown> = { ...data };
+      for (const key of numericFields) {
+        const val = data[key];
+        payload[key] = val != null && val !== '' ? Number(val) : null;
+      }
+      await apiFetch<User>('/user', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+      dirtyRef.current = false;
+      setDirty(false);
+      // Refetch to get the freshly computed calorie target from the server
+      refetch();
+      toast('Settings saved', 'success');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to save', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }, [saving, refetch, toast]);
+
+  // Save pending changes on unmount (navigating away)
+  useEffect(() => {
+    return () => {
+      if (dirtyRef.current) {
+        const beaconData = { ...formRef.current };
+        const beaconPayload: Record<string, unknown> = { ...beaconData };
+        for (const k of ['heightInches', 'currentWeight', 'activityLevel', 'tdeeSmoothingFactor'] as const) {
+          const v = beaconData[k];
+          beaconPayload[k] = v != null && v !== '' ? Number(v) : null;
+        }
+        navigator.sendBeacon(
+          '/api/user',
+          new Blob([JSON.stringify(beaconPayload)], { type: 'application/json' }),
+        );
+      }
+    };
+  }, []);
+
+  const smoothVal = Number(form.tdeeSmoothingFactor || 0.1);
+
+  const isLoading = loading && !user;
+
+  return (
+    <div className={viewStyles.view}>
+      <div className={styles.content}>
+        {isLoading ? (
+          <>
+            <SkeletonCard lines={4} />
+            <SkeletonCard lines={2} />
+            <SkeletonCard lines={3} />
+          </>
+        ) : (
+          <>
+            <div className={viewStyles.staggerIn}>
+              <SettingsGroup title="Profile">
+                <SettingsField label="Age">
+                  <input
+                    type="number"
+                    value={form.age ?? ''}
+                    onChange={(e) => {
+                      const parsed = parseInt(e.target.value);
+                      updateField('age', isNaN(parsed) ? null : parsed);
+                    }}
+                  />
+                </SettingsField>
+                <SettingsField label="Sex">
+                  <select
+                    value={form.sex ?? 'male'}
+                    onChange={(e) => updateField('sex', e.target.value)}
+                  >
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </SettingsField>
+                <SettingsField label="Height" suffix="in">
+                  <input
+                    type="number"
+                    value={form.heightInches ?? ''}
+                    onChange={(e) => updateField('heightInches', e.target.value || null)}
+                  />
+                </SettingsField>
+                <SettingsField label="Weight" suffix="lbs">
+                  <input
+                    type="number"
+                    value={form.currentWeight ?? ''}
+                    onChange={(e) => updateField('currentWeight', e.target.value || null)}
+                  />
+                </SettingsField>
+              </SettingsGroup>
+            </div>
+
+            <div className={viewStyles.staggerIn} style={{ animationDelay: '60ms' }}>
+              <SettingsGroup title="Goal">
+                <SettingsField label="Objective">
+                  <select
+                    value={form.objective ?? 'maintain'}
+                    onChange={(e) => updateField('objective', e.target.value)}
+                  >
+                    <option value="cut">Cut</option>
+                    <option value="maintain">Maintain</option>
+                    <option value="bulk">Bulk</option>
+                  </select>
+                </SettingsField>
+                <SettingsField label="Rate">
+                  <select
+                    value={String((form.goalPace ?? 500) / 500)}
+                    onChange={(e) => {
+                      const pace = Math.round(Number(e.target.value) * 500);
+                      updateField('goalPace', pace);
+                    }}
+                  >
+                    <option value="0.5">0.5 lb / week</option>
+                    <option value="1">1 lb / week</option>
+                    <option value="1.5">1.5 lb / week</option>
+                    <option value="2">2 lb / week</option>
+                  </select>
+                </SettingsField>
+                <SettingsField label="Calorie Target">
+                  <div className={styles.readOnlyValue}>
+                    {user?.computedCalorieTarget
+                      ? `${user.computedCalorieTarget.calorieTarget} cal`
+                      : '—'}
+                  </div>
+                </SettingsField>
+                {user?.computedCalorieTarget && (
+                  <button
+                    className={styles.targetBreakdown}
+                    onClick={() => setShowTdeeBreakdown(true)}
+                    type="button"
+                  >
+                    {user.computedCalorieTarget.tdeeSource === 'adaptive' ? 'Adaptive' : 'Est.'} TDEE {user.computedCalorieTarget.tdeeUsed}
+                    {user.computedCalorieTarget.objectiveOffset !== 0 && (
+                      <> {user.computedCalorieTarget.objectiveOffset > 0 ? '+' : '−'} {Math.abs(user.computedCalorieTarget.objectiveOffset)} {user.computedCalorieTarget.objective}</>
+                    )}
+                    {' = '}{user.computedCalorieTarget.calorieTarget}
+                    <span className={styles.breakdownHint}>Tap to see breakdown</span>
+                  </button>
+                )}
+              </SettingsGroup>
+            </div>
+
+            <div className={viewStyles.staggerIn} style={{ animationDelay: '120ms' }}>
+              <SettingsGroup title="Macro Targets">
+                <SettingsField label="Protein" suffix="g">
+                  <input
+                    type="number"
+                    value={form.proteinTarget ?? ''}
+                    onChange={(e) => {
+                      const parsed = parseInt(e.target.value);
+                      updateField('proteinTarget', isNaN(parsed) ? null : parsed);
+                    }}
+                  />
+                </SettingsField>
+                <SettingsField label="Fat" suffix="g">
+                  <input
+                    type="number"
+                    value={form.fatTarget ?? ''}
+                    onChange={(e) => {
+                      const parsed = parseInt(e.target.value);
+                      updateField('fatTarget', isNaN(parsed) ? null : parsed);
+                    }}
+                  />
+                </SettingsField>
+                <SettingsField label="Carbs" suffix="g">
+                  <input
+                    type="number"
+                    value={form.carbTarget ?? ''}
+                    onChange={(e) => {
+                      const parsed = parseInt(e.target.value);
+                      updateField('carbTarget', isNaN(parsed) ? null : parsed);
+                    }}
+                  />
+                </SettingsField>
+              </SettingsGroup>
+            </div>
+
+            <div className={viewStyles.staggerIn} style={{ animationDelay: '180ms' }}>
+              <SettingsGroup title="Adaptive TDEE">
+                <SettingsField label="Activity Level">
+                  <select
+                    value={String(parseFloat(form.activityLevel || '1.25'))}
+                    onChange={(e) => updateField('activityLevel', e.target.value)}
+                  >
+                    <option value="1">Sedentary (1.0)</option>
+                    <option value="1.15">Light (1.15)</option>
+                    <option value="1.25">Moderate (1.25)</option>
+                    <option value="1.4">Active (1.4)</option>
+                    <option value="1.55">Very Active (1.55)</option>
+                  </select>
+                </SettingsField>
+                <SettingsField label="Smoothing" suffix={smoothVal.toFixed(2)}>
+                  <input
+                    type="range"
+                    min="0.05"
+                    max="0.30"
+                    step="0.01"
+                    value={smoothVal}
+                    onChange={(e) => updateField('tdeeSmoothingFactor', e.target.value)}
+                  />
+                </SettingsField>
+              </SettingsGroup>
+            </div>
+
+            <div className={viewStyles.staggerIn} style={{ animationDelay: '240ms' }}>
+              <SettingsGroup title="Appearance">
+                <SettingsField label="Theme">
+                  <select
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value as 'dark' | 'light')}
+                  >
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                  </select>
+                </SettingsField>
+                <SettingsField label="Text Size">
+                  <select
+                    value={textSize}
+                    onChange={(e) => setTextSize(e.target.value as TextSize)}
+                  >
+                    <option value="small">Small</option>
+                    <option value="default">Default</option>
+                    <option value="large">Large</option>
+                  </select>
+                </SettingsField>
+              </SettingsGroup>
+            </div>
+
+            <div className={viewStyles.staggerIn} style={{ animationDelay: '300ms' }}>
+              <SettingsGroup title="Data">
+                <ImportSection />
+                <CsvImportSection />
+                <DataExportImportSection />
+              </SettingsGroup>
+            </div>
+
+            {dirty && (
+              <div className={`${viewStyles.staggerIn} ${styles.recalculateWrap}`} style={{ animationDelay: '0ms' }}>
+                <button
+                  className={styles.recalculateBtn}
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Recalculate'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {saving && <div className={styles.saving}>Saving...</div>}
+      </div>
+
+      {showTdeeBreakdown && (
+        <TdeeBreakdownModal onClose={() => setShowTdeeBreakdown(false)} />
+      )}
+    </div>
+  );
+}
