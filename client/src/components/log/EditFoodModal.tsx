@@ -31,6 +31,27 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
   const [unit, setUnit] = useState<Unit>('g');
   const [selectedBlock, setSelectedBlock] = useState('morning');
   const [saving, setSaving] = useState(false);
+
+  // Lock body scroll when modal is open to prevent iOS from scrolling
+  // the page behind the modal when the keyboard opens
+  useEffect(() => {
+    if (!entry) return;
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, [entry]);
+
   useEffect(() => {
     if (entry) {
       const sg = Number(entry.food.servingGrams) || 0;
