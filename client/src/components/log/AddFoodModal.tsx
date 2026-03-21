@@ -115,7 +115,7 @@ function ModalAccordionCard({
 export default function AddFoodModal({ open, hour, date, onClose, onAdded, categoryConfig }: Props) {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [expandedCategory, setExpandedCategory] = useState<string | null>('favorites');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [selections, setSelections] = useState<Map<string, SelectedFood>>(new Map());
   const [submitting, setSubmitting] = useState(false);
   const [selectedBlock, setSelectedBlock] = useState(() => hourToBlock(hour));
@@ -134,7 +134,7 @@ export default function AddFoodModal({ open, hour, date, onClose, onAdded, categ
     if (open) {
       setSearch('');
       setDebouncedSearch('');
-      setExpandedCategory('favorites');
+      setExpandedCategory(null);
       setSelections(new Map());
       setSelectedBlock(hourToBlock(hour));
     }
@@ -150,7 +150,7 @@ export default function AddFoodModal({ open, hour, date, onClose, onAdded, categ
       const first = all.find((k) => (counts[k] ?? 0) > 0);
       setExpandedCategory(first ?? null);
     } else if (!debouncedSearch && prevSearch.current) {
-      setExpandedCategory('favorites');
+      setExpandedCategory(null);
     }
     prevSearch.current = debouncedSearch;
   }, [debouncedSearch, counts, categoryConfig]);
