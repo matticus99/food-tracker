@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { getCsrfToken } from '../../hooks/useApi';
 import styles from './ImportSection.module.css';
 
 const CSV_TEMPLATE = 'name,category,emoji,servingLabel,servingGrams,calories,protein,fat,carbs\n';
@@ -34,8 +35,11 @@ export default function CsvImportSection() {
     formData.append('file', file);
 
     try {
+      const token = await getCsrfToken();
       const res = await fetch('/api/import/csv', {
         method: 'POST',
+        headers: { 'X-CSRF-Token': token },
+        credentials: 'include',
         body: formData,
       });
       if (!res.ok) {

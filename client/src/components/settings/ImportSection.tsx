@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useApi } from '../../hooks/useApi';
+import { useApi, getCsrfToken } from '../../hooks/useApi';
 import styles from './ImportSection.module.css';
 
 interface ImportStatus {
@@ -32,8 +32,11 @@ export default function ImportSection() {
     formData.append('file', file);
 
     try {
+      const token = await getCsrfToken();
       const res = await fetch('/api/import/macrofactor', {
         method: 'POST',
+        headers: { 'X-CSRF-Token': token },
+        credentials: 'include',
         body: formData,
       });
       if (!res.ok) {

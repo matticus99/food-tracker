@@ -7,6 +7,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { toLocalDateStr } from '../utils/date.js';
 
 const MAX_ROWS_PER_SHEET = 5000;
+const MAX_DECOMPRESSED_SIZE = 50 * 1024 * 1024; // 50 MB decompression limit
 
 interface ImportSummary {
   dailyIntakeCount: number;
@@ -71,6 +72,19 @@ const HISTORY_ALIAS = 'History_Data';
 
 async function patchHistorySheet(buf: Buffer): Promise<Buffer> {
   const zip = await JSZip.loadAsync(buf);
+
+  // Guard against zip bombs: sum up uncompressed sizes of all entries
+  let totalSize = 0;
+  for (const entry of Object.values(zip.files)) {
+    if (!entry.dir) {
+      const data = await entry.async('nodebuffer');
+      totalSize += data.length;
+      if (totalSize > MAX_DECOMPRESSED_SIZE) {
+        throw new AppError(400, 'File too large: decompressed content exceeds 50 MB limit');
+      }
+    }
+  }
+
   const wbXmlFile = zip.file('xl/workbook.xml');
   if (!wbXmlFile) return buf;
 
