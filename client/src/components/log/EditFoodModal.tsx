@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { apiFetch } from '../../hooks/useApi';
 import { type Unit, convertAmount, toServings, formatAmount } from '../../utils/unitConversions';
 import { TIME_BLOCKS, hourToBlock } from '../../constants/timeBlocks';
@@ -31,9 +31,10 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
   const [unit, setUnit] = useState<Unit>('g');
   const [selectedBlock, setSelectedBlock] = useState('morning');
   const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Lock body scroll when modal is open to prevent iOS from scrolling
-  // the page behind the modal when the keyboard opens
+  // Lock body scroll & reset overlay position when modal is open
   useEffect(() => {
     if (!entry) return;
     const scrollY = window.scrollY;
@@ -42,7 +43,19 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
     document.body.style.left = '0';
     document.body.style.right = '0';
     document.body.style.overflow = 'hidden';
+
+    // Focus input after modal settles, then force scroll back to top
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+      // iOS may scroll the overlay when keyboard opens — reset it
+      requestAnimationFrame(() => {
+        window.scrollTo(0, 0);
+        overlayRef.current?.scrollTo(0, 0);
+      });
+    }, 100);
+
     return () => {
+      clearTimeout(timer);
       document.body.style.position = '';
       document.body.style.top = '';
       document.body.style.left = '';
@@ -51,6 +64,14 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
       window.scrollTo(0, scrollY);
     };
   }, [entry]);
+
+  // Counter iOS visual viewport scrolling when keyboard is shown
+  const handleFocus = useCallback(() => {
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      overlayRef.current?.scrollTo(0, 0);
+    }, 50);
+  }, []);
 
   useEffect(() => {
     if (entry) {
@@ -144,7 +165,7 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div className={styles.overlay} ref={overlayRef} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h3 className={styles.title}>Edit Entry</h3>
@@ -165,8 +186,9 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
               min="0"
               step="any"
               value={amount}
+              ref={inputRef}
               onChange={(e) => setAmount(e.target.value)}
-              autoFocus
+              onFocus={handleFocus}
             />
             <div className={styles.servingNote}>
               {entry.food.servingLabel}
