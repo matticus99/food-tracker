@@ -31,7 +31,6 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
   const [unit, setUnit] = useState<Unit>('g');
   const [selectedBlock, setSelectedBlock] = useState('morning');
   const [saving, setSaving] = useState(false);
-
   useEffect(() => {
     if (entry) {
       const sg = Number(entry.food.servingGrams) || 0;
@@ -131,7 +130,7 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
           <button className={styles.closeBtn} onClick={onClose}>×</button>
         </div>
 
-        <div className={styles.body}>
+        <div className={styles.fixedTop}>
           <div className={styles.selectedFood}>
             <span className={styles.foodEmoji}>{entry.food.emoji || '🍽️'}</span>
             <span className={styles.foodName}>{entry.food.name}</span>
@@ -169,7 +168,9 @@ export default function EditFoodModal({ entry, onClose, onSaved }: Props) {
               <span style={{ color: 'var(--accent-emerald)' }}>{macros.carbs}g C</span>
             </div>
           )}
+        </div>
 
+        <div className={styles.body}>
           <div className={styles.timeSection}>
             <label className={styles.timeLabel}>Time of Day</label>
             <div className={styles.timeBlocks}>

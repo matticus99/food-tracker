@@ -71,8 +71,16 @@
   background: var(--bg-hover);
 }
 
-.body {
+.fixedTop {
   padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  flex-shrink: 0;
+}
+
+.body {
+  padding: 0 var(--space-lg) var(--space-lg);
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
