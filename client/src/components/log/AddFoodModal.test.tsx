@@ -100,7 +100,13 @@ describe('AddFoodModal', () => {
   });
 
   it('displays food list from API in expanded card', async () => {
+    const user = userEvent.setup();
     render(<AddFoodModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Favorites'));
 
     await waitFor(() => {
       expect(screen.getByText('Chicken Breast')).toBeInTheDocument();
@@ -109,7 +115,13 @@ describe('AddFoodModal', () => {
   });
 
   it('shows food serving info', async () => {
+    const user = userEvent.setup();
     render(<AddFoodModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Favorites'));
 
     await waitFor(() => {
       expect(screen.getByText(/100g/)).toBeInTheDocument();
@@ -118,8 +130,14 @@ describe('AddFoodModal', () => {
 
   it('shows "No foods" when expanded card is empty', async () => {
     vi.stubGlobal('fetch', mockFetch([], emptyCounts));
+    const user = userEvent.setup();
 
     render(<AddFoodModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Favorites'));
 
     await waitFor(() => {
       expect(screen.getByText('No foods')).toBeInTheDocument();
@@ -127,7 +145,13 @@ describe('AddFoodModal', () => {
   });
 
   it('shows Select All button when card has foods', async () => {
+    const user = userEvent.setup();
     render(<AddFoodModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Favorites'));
 
     await waitFor(() => {
       expect(screen.getByText('Select All')).toBeInTheDocument();
@@ -137,6 +161,11 @@ describe('AddFoodModal', () => {
   it('clicking a food toggles selection (shows checkmark)', async () => {
     const user = userEvent.setup();
     render(<AddFoodModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Favorites'));
 
     await waitFor(() => {
       expect(screen.getByText('Chicken Breast')).toBeInTheDocument();
@@ -155,6 +184,11 @@ describe('AddFoodModal', () => {
     render(<AddFoodModal {...defaultProps} />);
 
     await waitFor(() => {
+      expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Favorites'));
+
+    await waitFor(() => {
       expect(screen.getByText('Chicken Breast')).toBeInTheDocument();
     });
 
@@ -171,6 +205,11 @@ describe('AddFoodModal', () => {
     render(<AddFoodModal {...defaultProps} />);
 
     await waitFor(() => {
+      expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Favorites'));
+
+    await waitFor(() => {
       expect(screen.getByText('Chicken Breast')).toBeInTheDocument();
     });
 
@@ -185,6 +224,11 @@ describe('AddFoodModal', () => {
     render(<AddFoodModal {...defaultProps} />);
 
     await waitFor(() => {
+      expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Favorites'));
+
+    await waitFor(() => {
       expect(screen.getByText('Select All')).toBeInTheDocument();
     });
 
@@ -197,6 +241,11 @@ describe('AddFoodModal', () => {
   it('Deselect All removes all selections from the card', async () => {
     const user = userEvent.setup();
     render(<AddFoodModal {...defaultProps} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Favorites'));
 
     await waitFor(() => {
       expect(screen.getByText('Select All')).toBeInTheDocument();
@@ -257,6 +306,11 @@ describe('AddFoodModal', () => {
         onClose={handleClose}
       />
     );
+
+    await waitFor(() => {
+      expect(screen.getByText('Favorites')).toBeInTheDocument();
+    });
+    await user.click(screen.getByText('Favorites'));
 
     await waitFor(() => {
       expect(screen.getByText('Chicken Breast')).toBeInTheDocument();

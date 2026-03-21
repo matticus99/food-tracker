@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('../db/connection.js', () => ({ db: {} }));
+
 import { excelDateToISO } from './macrofactorImport.js';
 
 describe('excelDateToISO', () => {
