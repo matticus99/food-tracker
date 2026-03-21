@@ -1,9 +1,12 @@
 import 'dotenv/config';
+import crypto from 'node:crypto';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
+import { doubleCsrf } from 'csrf-csrf';
 import userRoutes from './routes/user.js';
 import foodsRoutes from './routes/foods.js';
 import foodLogRoutes from './routes/foodLog.js';
@@ -15,18 +18,49 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { userMiddleware } from './middleware/userMiddleware.js';
 import { queryClient } from './db/connection.js';
 
+// ── Validate SESSION_SECRET on startup ──
+const SESSION_SECRET = process.env.SESSION_SECRET ?? '';
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction && (SESSION_SECRET.length < 32 || SESSION_SECRET.includes('change-in-production'))) {
+  console.error('FATAL: SESSION_SECRET must be at least 32 characters and not the default value in production.');
+  console.error('Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+  process.exit(1);
+}
+
+// Use a stable secret for dev, validated secret for prod
+const csrfSecret = SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+
 const app = express();
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 
 // Trust first proxy (nginx) so express-rate-limit sees real client IPs
-if (process.env.NODE_ENV === 'production') {
+if (isProduction) {
   app.set('trust proxy', 1);
 }
 
+// ── CSRF Protection (double-submit cookie pattern) ──
+const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
+  getSecret: () => csrfSecret,
+  getSessionIdentifier: () => '',   // stateless double-submit; session binding added with auth
+  cookieName: '__csrf',
+  cookieOptions: {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: isProduction,
+    path: '/',
+  },
+  getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'] as string,
+});
+
 // ── Middleware ──
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173' }));
+app.use(cors({
+  origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  credentials: true,
+}));
 app.use(express.json({ limit: '16kb' }));
+app.use(cookieParser());
 app.use(morgan('short'));
 
 // ── Rate limiting ──
@@ -47,6 +81,21 @@ app.use((_req, res, next) => {
 
 // ── User middleware (caches userId for all /api routes) ──
 app.use('/api', userMiddleware);
+
+// ── CSRF token endpoint (GET = exempt from CSRF check) ──
+app.get('/api/csrf-token', (req, res) => {
+  const token = generateCsrfToken(req, res);
+  res.json({ token });
+});
+
+// ── CSRF protection for all state-changing API requests ──
+app.use('/api', (req, res, next) => {
+  // Skip CSRF for GET/HEAD/OPTIONS (safe methods)
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+  doubleCsrfProtection(req, res, next);
+});
 
 // ── Routes ──
 app.use('/api/user', userRoutes);

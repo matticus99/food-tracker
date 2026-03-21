@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { getCsrfToken } from '../../hooks/useApi';
 import styles from './DataExportImportSection.module.css';
 
 interface ImportResult {
@@ -29,7 +30,7 @@ export default function DataExportImportSection() {
     setResult(null);
 
     try {
-      const res = await fetch('/api/import/export');
+      const res = await fetch('/api/import/export', { credentials: 'include' });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || body.message || `Export failed (${res.status})`);
@@ -63,8 +64,11 @@ export default function DataExportImportSection() {
     formData.append('file', file);
 
     try {
+      const token = await getCsrfToken();
       const res = await fetch('/api/import/data', {
         method: 'POST',
+        headers: { 'X-CSRF-Token': token },
+        credentials: 'include',
         body: formData,
       });
       if (!res.ok) {

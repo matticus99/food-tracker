@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { apiFetch, useApi } from './useApi';
+import { apiFetch, useApi, clearCsrfToken } from './useApi';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -22,6 +22,7 @@ function mockFetchFail(status: number, body?: Record<string, unknown>) {
 // ── Setup ────────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
+  clearCsrfToken();
   vi.stubGlobal('fetch', mockFetchOk({}));
 });
 
@@ -32,7 +33,7 @@ afterEach(() => {
 // ── apiFetch tests ───────────────────────────────────────────────────────────
 
 describe('apiFetch', () => {
-  it('makes correct request with JSON headers', async () => {
+  it('makes correct request with JSON headers and credentials', async () => {
     const payload = { id: 1, name: 'Apple' };
     vi.stubGlobal('fetch', mockFetchOk(payload));
 
@@ -40,21 +41,32 @@ describe('apiFetch', () => {
 
     expect(fetch).toHaveBeenCalledOnce();
     expect(fetch).toHaveBeenCalledWith('/api/foods/1', {
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
     });
     expect(result).toEqual(payload);
   });
 
-  it('passes through custom RequestInit options', async () => {
-    vi.stubGlobal('fetch', mockFetchOk({ ok: true }));
+  it('fetches CSRF token for mutating requests', async () => {
+    const csrfResponse = { token: 'test-csrf-token' };
+    const fetchFn = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(csrfResponse) })   // csrf fetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ ok: true }) });  // actual POST
+
+    vi.stubGlobal('fetch', fetchFn);
 
     await apiFetch('/foods', {
       method: 'POST',
       body: JSON.stringify({ name: 'Banana' }),
     });
 
-    expect(fetch).toHaveBeenCalledWith('/api/foods', {
-      headers: { 'Content-Type': 'application/json' },
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    // First call: CSRF token fetch
+    expect(fetchFn).toHaveBeenNthCalledWith(1, '/api/csrf-token', { credentials: 'include' });
+    // Second call: actual POST with CSRF header
+    expect(fetchFn).toHaveBeenNthCalledWith(2, '/api/foods', {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': 'test-csrf-token' },
       method: 'POST',
       body: JSON.stringify({ name: 'Banana' }),
     });
