@@ -10,7 +10,27 @@ import { exportData } from '../services/dataExport.js';
 import { importData } from '../services/dataImport.js';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+const ALLOWED_XLSX_MIMES = [
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/zip',              // some clients send xlsx as zip
+  'application/octet-stream',     // fallback for unrecognized types
+];
+const ALLOWED_CSV_MIMES = ['text/csv', 'text/plain', 'application/octet-stream'];
+const ALLOWED_JSON_MIMES = ['application/json', 'text/plain', 'application/octet-stream'];
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allAllowed = [...ALLOWED_XLSX_MIMES, ...ALLOWED_CSV_MIMES, ...ALLOWED_JSON_MIMES];
+    if (allAllowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Unsupported file type: ${file.mimetype}`));
+    }
+  },
+});
 
 // POST /api/import/macrofactor — upload .xlsx file
 router.post('/macrofactor', upload.single('file'), async (req, res, next) => {

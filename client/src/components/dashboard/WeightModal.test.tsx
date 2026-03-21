@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { clearCsrfToken } from '../../hooks/useApi';
 import WeightModal from './WeightModal';
 
 // ── Setup ────────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
+  clearCsrfToken();
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({
@@ -136,10 +138,9 @@ describe('WeightModal', () => {
 
   it('sends correct API request on submit', async () => {
     const user = userEvent.setup();
-    const fetchSpy = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({}),
-    });
+    const fetchSpy = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ token: 'csrf-tok' }) })
+      .mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
     vi.stubGlobal('fetch', fetchSpy);
 
     render(<WeightModal {...defaultProps} date="2025-06-15" />);
@@ -150,7 +151,8 @@ describe('WeightModal', () => {
 
     await waitFor(() => {
       expect(fetchSpy).toHaveBeenCalledWith('/api/weight', {
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': 'csrf-tok' },
         method: 'POST',
         body: JSON.stringify({ date: '2025-06-15', weight: 180 }),
       });
