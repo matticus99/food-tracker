@@ -151,6 +151,12 @@ Detailed documentation is available in the [`docs/`](docs/) directory:
 
 ---
 
+## Contributing
+
+This is a personal project. You're welcome to fork it and make it your own, but pull requests are not accepted and will be automatically closed.
+
+---
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
