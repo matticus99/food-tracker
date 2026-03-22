@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { apiFetch } from '../../hooks/useApi';
 import { type Unit, convertToGrams, convertFromGrams, formatAmount } from '../../utils/unitConversions';
 import { getAllCategories, getCategoryLabel, type CategoryConfig } from '../../constants/categories';
@@ -46,6 +46,34 @@ export default function FoodForm({ open, food, onClose, onSaved, categoryConfig,
   const [carbs, setCarbs] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Lock body scroll for iOS PWA safe area support
+  useEffect(() => {
+    if (!open) return;
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
+
+  const handleFocus = useCallback(() => {
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      overlayRef.current?.scrollTo(0, 0);
+    }, 50);
+  }, []);
 
   // Per-gram nutritional ratios (locked once food exists)
   const ratios = useRef({ calPerGram: 0, proPerGram: 0, fatPerGram: 0, carbPerGram: 0 });
@@ -240,7 +268,7 @@ export default function FoodForm({ open, food, onClose, onSaved, categoryConfig,
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
+    <div ref={overlayRef} className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h3 className={styles.title}>{isEdit ? 'Edit Food' : 'New Food'}</h3>
