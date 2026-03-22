@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../../hooks/useApi';
 import { type Unit, convertToGrams, convertFromGrams, formatAmount } from '../../utils/unitConversions';
 import { getAllCategories, getCategoryLabel, type CategoryConfig } from '../../constants/categories';
@@ -67,13 +67,6 @@ export default function FoodForm({ open, food, onClose, onSaved, categoryConfig,
       window.scrollTo(0, scrollY);
     };
   }, [open]);
-
-  const handleFocus = useCallback(() => {
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      overlayRef.current?.scrollTo(0, 0);
-    }, 50);
-  }, []);
 
   // Per-gram nutritional ratios (locked once food exists)
   const ratios = useRef({ calPerGram: 0, proPerGram: 0, fatPerGram: 0, carbPerGram: 0 });
