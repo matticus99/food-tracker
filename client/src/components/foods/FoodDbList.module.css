@@ -16,8 +16,10 @@
   transition: background var(--transition-fast);
 }
 
-.item:hover {
-  background: var(--bg-hover);
+@media (hover: hover) {
+  .item:hover {
+    background: var(--bg-hover);
+  }
 }
 
 .emoji {
@@ -90,12 +92,16 @@
   transition: opacity var(--transition-fast), color var(--transition-fast);
 }
 
-.item:hover .deleteBtn {
-  opacity: 1;
+@media (hover: hover) {
+  .item:hover .deleteBtn {
+    opacity: 1;
+  }
 }
 
-.deleteBtn:hover {
-  color: var(--accent-rose);
+@media (hover: hover) {
+  .deleteBtn:hover {
+    color: var(--accent-rose);
+  }
 }
 
 .addNewBtn {
@@ -111,9 +117,11 @@
   transition: all var(--transition-fast);
 }
 
-.addNewBtn:hover {
-  border-color: var(--accent-indigo);
-  background: rgba(99, 102, 241, 0.05);
+@media (hover: hover) {
+  .addNewBtn:hover {
+    border-color: var(--accent-indigo);
+    background: rgba(99, 102, 241, 0.05);
+  }
 }
 
 @media (max-width: 640px) {
