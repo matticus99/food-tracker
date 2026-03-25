@@ -32,7 +32,7 @@ export default function MacroCard({ protein, proteinTarget, fat, fatTarget, carb
             <div className={styles.barFill} style={{ width: `${pct}%` }} />
             <div className={styles.barContent}>
               <span className={styles.label}>{row.label}</span>
-              <span className={styles.values}>
+              <span className={`${styles.values}${row.current > row.target ? ` ${styles.valuesOver}` : ''}`}>
                 {Math.round(row.current)}g / {Math.round(row.target)}g
               </span>
             </div>
