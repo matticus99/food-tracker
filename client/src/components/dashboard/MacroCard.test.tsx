@@ -54,6 +54,35 @@ describe('MacroCard', () => {
     expect(zeroValues.length).toBe(3);
   });
 
+  it('applies over-target class when current exceeds target', () => {
+    const { container } = render(
+      <MacroCard
+        protein={200}
+        proteinTarget={180}
+        fat={80}
+        fatTarget={70}
+        carbs={100}
+        carbsTarget={250}
+      />
+    );
+
+    const valueSpans = container.querySelectorAll('span[class*="values"]');
+    // Protein (200 > 180) and Fat (80 > 70) should have valuesOver class
+    expect(valueSpans[0].className).toMatch(/valuesOver/);
+    expect(valueSpans[1].className).toMatch(/valuesOver/);
+    // Carbs (100 < 250) should not
+    expect(valueSpans[2].className).not.toMatch(/valuesOver/);
+  });
+
+  it('does not apply over-target class when at or under target', () => {
+    const { container } = render(<MacroCard {...defaultProps} />);
+
+    const valueSpans = container.querySelectorAll('span[class*="values"]');
+    valueSpans.forEach((span) => {
+      expect(span.className).not.toMatch(/valuesOver/);
+    });
+  });
+
   it('rounds decimal values', () => {
     render(
       <MacroCard
